@@ -1,0 +1,61 @@
+.fish-speech{
+  position:absolute;
+  z-index:4;
+  width:max-content;
+  min-width:160px;
+  max-width:min(260px,calc(100vw - 28px));
+  padding:13px 17px 14px;
+  border:2px solid #e7c996;
+  border-radius:19px 19px 18px 18px;
+  background:#f8ebcd;
+  color:#28535a;
+  box-shadow:0 9px 22px #052f3c38,0 0 0 3px #f8ebcd40;
+  outline:1px dashed #b9845c66;
+  outline-offset:-6px;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.45;
+  text-align:left;
+  pointer-events:none!important;
+  user-select:none;
+  touch-action:none;
+  transform:translateX(-50%);
+  opacity:1;
+  transition:opacity .28s ease;
+}
+.fish-speech[hidden]{display:none!important}
+.fish-speech__name,.fish-speech__line{display:block}
+.fish-speech__name{
+  margin-bottom:3px;
+  color:#9d6342;
+  font-family:"Songti SC","STSong",serif;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.08em;
+}
+.fish-speech__line{
+  font-size:13px;
+  letter-spacing:.02em;
+}
+.fish-speech::after{
+  content:"";
+  position:absolute;
+  left:var(--tail-x,50%);
+  width:14px;
+  height:14px;
+  border-right:2px solid #e7c996;
+  border-bottom:2px solid #e7c996;
+  background:#f8ebcd;
+  transform:translateX(-50%) rotate(45deg);
+  pointer-events:none;
+}
+.fish-speech[data-placement="above"]::after{
+  bottom:-8px;
+}
+.fish-speech[data-placement="below"]::after{
+  top:-8px;
+  transform:translateX(-50%) rotate(225deg);
+}
+.fish-speech[data-state="fading"],.fish-speech.is-fading{opacity:.08}
+@media(prefers-reduced-motion:reduce){
+  .fish-speech{transition:none}
+}

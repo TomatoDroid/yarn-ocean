@@ -1,0 +1,13 @@
+{
+  "name": "yarn-ocean",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "线织海洋 · 基于 Three.js 的互动手作海洋馆",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
