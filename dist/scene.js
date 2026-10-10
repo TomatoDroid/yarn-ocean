@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import {OrbitControls} from './vendor/OrbitControls.js';
 import {createFishPicker} from './fish-picker.js?v=20261009-fish-talk';
-import {createFishSpeech} from './fish-speech.js?v=20261009-fish-talk';
+import {createFishSpeech} from './fish-speech.js?v=20261010-feeding';
+import {createFishFeeding} from './fish-feeding.js?v=20261010-feeding';
+import {createTapGesture} from './pointer-tap.js?v=20261010-feeding';
 import {createSwimmer,stepSchool,touchSwimmer,toLane} from './swimming.js?v=20261005-surround';
 import {createHabitat} from './habitat.js?v=20261005-surround';
 import {createSeafloorLife} from './seafloor-life.js?v=20261005-surround';
@@ -113,6 +115,7 @@ function frontEyes(g,color='#fffbed',sep=.25,y=.12,size=.18,z=.36){
   }
 }
 function mouth(g,x,y,z,color,w=.19,h=.055,front=false){
+  g.userData.mouthPoint=V(x,y,z);
   const points=Array.from({length:34},(_,i)=>{const a=i/34*Math.PI*2;return front?V(x+Math.cos(a)*w,y+Math.sin(a)*h,z):V(x,y+Math.sin(a)*h,z+Math.cos(a)*w);});
   strand(g,points,.052,color,{closed:true,fur:.012,density:65});
 }
@@ -195,7 +198,10 @@ uniform float uRadius;
 uniform float uRound;
 uniform float uTailSign;
 uniform float uTouch;
+uniform float uJoy;
 vec3 swimDeform(vec3 p){
+  p.y*=1.0+sin(uBeat*1.3)*.045*uJoy;
+  p.z*=1.0+cos(uBeat*1.3)*.035*uJoy;
   p.y*=1.0-.055*uTouch; p.z*=1.0+.035*uTouch;
   if(uRound>.5){
     float fin=smoothstep(uRadius*.76,uRadius*1.52,abs(p.x));
@@ -213,7 +219,7 @@ vec3 swimDeform(vec3 p){
 }`;
 function addSwimmingSkin(g){
   const d=g.userData;
-  d.uniforms={uBeat:{value:d.phase},uPower:{value:0},uRadius:{value:d.rx},uRound:{value:d.kind==='round'?1:0},uTailSign:{value:d.kind==='fan'?-1:1},uTouch:{value:0}};
+  d.uniforms={uBeat:{value:d.phase},uPower:{value:0},uRadius:{value:d.rx},uRound:{value:d.kind==='round'?1:0},uTailSign:{value:d.kind==='fan'?-1:1},uTouch:{value:0},uJoy:{value:0}};
   g.traverse(o=>{
     if(!o.isMesh&&!o.isLineSegments)return;
     o.material=o.material.clone();
@@ -294,6 +300,8 @@ const particleMaterial=new THREE.PointsMaterial({color:'#ffffff',size:.030,trans
 const particles=new THREE.Points(particleGeometry,particleMaterial);scene.add(particles);
 const fishPicker=createFishPicker({definitions,creatures,renderer,onSelect:g=>focusFish(g),reduced});
 const fishSpeech=createFishSpeech({THREE,host,stage,status:document.querySelector('#interaction-status'),reduced});
+const feedingNote=document.querySelector('#feeding-note');
+const feeding=createFishFeeding({THREE,scene,woolTexture,onEat:g=>{fishSpeech.show(g,'好喜欢这一口！送你一颗小爱心。');feedingNote.textContent=`${g.userData.name}吃到啦，开心地吐出爱心。`;needsRender=true;}});
 const frustum=new THREE.Frustum(),viewProjection=new THREE.Matrix4(),fishSphere=new THREE.Sphere();
 function updateWindowBounds(){
   camera.updateMatrixWorld();frustum.setFromProjectionMatrix(viewProjection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse));
@@ -319,6 +327,7 @@ let selected=null,moving=!reduced.matches,tween=null,time=0,motionBlend=0,previo
 function setView(position,target){if(reduced.matches){camera.position.copy(position);controls.target.copy(target);tween=null;}else tween={position,target};needsRender=true;}
 function syncInfo(){const d=selected?.userData;document.querySelector('#fish-count').textContent=d?`${String(d.index+1).padStart(2,'0')} / ${definitions.length} · ${d.large?'大型游鱼':d.kind==='round'?'圆脸小鱼':d.kind==='fan'?'扇形小鱼':'长身小鱼'}`:`${definitions.length} 种模样 · 一片海`;document.querySelector('#school-count').textContent=`${definitions.length} 条游鱼 · 3 只小蟹`;document.querySelector('#name').textContent=d?d.name:'绒绒浅海';document.querySelector('#description').textContent=d?d.desc:'在珊瑚与海草之间，遇见柔软的海洋居民。';document.querySelector('#swatches').replaceChildren();if(d)for(const color of d.colors){const dot=document.createElement('i');dot.style.background=color;document.querySelector('#swatches').appendChild(dot);}fishPicker.sync(selected);}
 function overview(){
+  feeding.clear();
   fishSpeech.clear();
   if(selected){selected.userData.swim.inspect=false;selected.userData.swim.anchor=null;}
   selected=null;stage.dataset.view='overview';habitat.setDetail(false);root.children.forEach(c=>c.visible=c.userData.swim.mode==='crossing');particles.visible=true;
@@ -327,6 +336,7 @@ function overview(){
   setView(center.clone().add(V(.15,1.15,distance)),center);syncInfo();
 }
 function focusFish(g){
+  feeding.clear();
   fishSpeech.clear();
   if(selected&&selected!==g){selected.userData.swim.inspect=false;selected.userData.swim.anchor=null;}
   const swim=g.userData.swim;
@@ -343,12 +353,49 @@ function focusFish(g){
 }
 function cycle(dir){const current=selected?creatures.indexOf(selected):(dir>0?-1:0);focusFish(creatures[(current+dir+creatures.length)%creatures.length]);}
 document.querySelector('#previous-fish').onclick=()=>cycle(-1);document.querySelector('#next-fish').onclick=()=>cycle(1);document.querySelector('#reset').onclick=overview;
-const motion=document.querySelector('#motion');function label(){motion.textContent=moving?'暂停':'播放';motion.setAttribute('aria-pressed',String(moving));}label();motion.onclick=()=>{moving=!moving;if(moving)motionBlend=0;label();needsRender=true;};reduced.addEventListener('change',()=>{moving=!reduced.matches;motionBlend=0;label();needsRender=true;});
+const motion=document.querySelector('#motion');function label(){motion.textContent=moving?'暂停':'播放';motion.setAttribute('aria-pressed',String(moving));}label();motion.onclick=()=>{moving=!moving;if(moving)motionBlend=0;label();needsRender=true;};reduced.addEventListener('change',()=>{feeding.clear();moving=!reduced.matches;motionBlend=0;label();needsRender=true;});
 controls.addEventListener('start',()=>{tween=null;});controls.addEventListener('change',()=>needsRender=true);
-const ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),pointers=new Set();let down=null,multi=false;
-renderer.domElement.addEventListener('pointerdown',e=>{pointers.add(e.pointerId);multi=pointers.size>1;down={x:e.clientX,y:e.clientY,id:e.pointerId};});
-renderer.domElement.addEventListener('pointerup',e=>{pointers.delete(e.pointerId);const start=down;down=null;if(multi||!start||start.id!==e.pointerId||Math.hypot(e.clientX-start.x,e.clientY-start.y)>7){if(!pointers.size)multi=false;return;}const r=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(pointer,camera);const hits=ray.intersectObjects(clickable.filter(g=>g.visible),true).filter(h=>h.object.isMesh);if(hits.length){let g=hits[0].object;while(g.parent&&!g.userData.name)g=g.parent;if(g.userData.name)touchFish(g,hits[0].point);}});
-renderer.domElement.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);down=null;if(!pointers.size)multi=false;});
+const ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),tap=createTapGesture();
+const feedPlane=new THREE.Plane(),feedPoint=V(),projectedFish=V(),viewNormal=V();
+function feedAtPointer(e){
+  const rect=renderer.domElement.getBoundingClientRect();
+  pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
+  ray.setFromCamera(pointer,camera);
+  const hits=ray.intersectObjects(clickable.filter(g=>g.visible),true).filter(h=>h.object.isMesh);
+  let target=null;
+  if(hits.length){
+    let g=hits[0].object;while(g.parent&&!g.userData.name)g=g.parent;
+    if(g.userData.name){target=g;touchFish(g,hits[0].point);}
+  }
+  // Empty water feeds the nearest fish currently on screen, even after orbiting.
+  if(!target){
+    let nearest=Infinity;
+    for(const g of creatures){
+      if(!g.visible||g.userData.swim.mode!=='crossing')continue;
+      projectedFish.copy(g.position).project(camera);
+      if(Math.abs(projectedFish.x)>1||Math.abs(projectedFish.y)>1||Math.abs(projectedFish.z)>1)continue;
+      const distance=((projectedFish.x-pointer.x)*rect.width)**2+((projectedFish.y-pointer.y)*rect.height)**2;
+      if(distance<nearest){nearest=distance;target=g;}
+    }
+  }
+  if(!target){feedingNote.textContent='等小鱼游近一点，再喂一口吧。';return;}
+  if(!moving&&!reduced.matches){feedingNote.textContent='小鱼在休息，点「播放」后再喂一口。';fishSpeech.show(target,'先点「播放」，我就来吃点心。');return;}
+  camera.getWorldDirection(viewNormal);
+  feedPlane.setFromNormalAndCoplanarPoint(viewNormal,target.position);
+  if(!ray.ray.intersectPlane(feedPlane,feedPoint))return;
+  if(feeding.feed(target,feedPoint,{instant:reduced.matches})){
+    if(!reduced.matches)feedingNote.textContent=`给${target.userData.name}的一颗毛线点心…`;
+    needsRender=true;
+  }
+}
+renderer.domElement.addEventListener('pointerdown',e=>tap.down(e,performance.now()));
+renderer.domElement.addEventListener('pointermove',e=>tap.move(e));
+renderer.domElement.addEventListener('pointerup',e=>{if(tap.up(e,performance.now()))feedAtPointer(e);});
+renderer.domElement.addEventListener('pointercancel',e=>tap.cancel(e));
+renderer.domElement.addEventListener('lostpointercapture',e=>tap.cancel(e));
+renderer.domElement.addEventListener('wheel',()=>tap.reset(),{passive:true});
+window.addEventListener('blur',()=>tap.reset());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)tap.reset();});
 host.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','Escape'].includes(e.key)){e.preventDefault();if(e.key==='Home'||e.key==='Escape')overview();else cycle(e.key==='ArrowRight'?1:-1);}});
 new ResizeObserver(()=>{const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);arrange();if(selected)focusFish(selected);else overview();needsRender=true;}).observe(host);
 let diagnosticAt=0;
@@ -368,7 +415,7 @@ function animate(now){
       g.visible=selected?g===selected:state.mode==='crossing';
       const freshPass=g.userData.renderedPass!==state.passes;orientFish(g,step,freshPass);g.userData.renderedPass=state.passes;
       g.userData.uniforms.uBeat.value=state.beat;
-      g.userData.uniforms.uPower.value=state.inspect?.5+state.reaction*.8:state.power+state.reaction*.5;
+      g.userData.uniforms.uPower.value=(state.inspect?.5+state.reaction*.8:state.power+state.reaction*.5)+(g.userData.feedingJoy||0)*.75;
       g.userData.uniforms.uTouch.value=state.reaction;
     }
     if(selected&&before){
@@ -383,7 +430,10 @@ function animate(now){
     const s=1-Math.exp(-6*dt);camera.position.lerp(tween.position,s);controls.target.lerp(tween.target,s);needsRender=true;
     if(camera.position.distanceTo(tween.position)<.005){camera.position.copy(tween.position);controls.target.copy(tween.target);tween=null;}
   }
-  controls.update();fishSpeech.update(camera,now);if(moving||needsRender){renderer.render(scene,camera);needsRender=false;}
+  controls.update();
+  needsRender=feeding.update(dt,{now,moving,reduced:reduced.matches})||needsRender;
+  for(const g of creatures)g.userData.uniforms.uJoy.value=g.userData.feedingJoy||0;
+  fishSpeech.update(camera,now);if(moving||needsRender){renderer.render(scene,camera);needsRender=false;}
   // Local verification data only; no telemetry or diagnostics UI is shipped to visitors.
   if((location.hostname==='localhost'||location.hostname==='127.0.0.1')&&now-diagnosticAt>250){
     diagnosticAt=now;renderer.domElement.dataset.swim=JSON.stringify({time,dt,motionBlend,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,habitat:true,seafloor:seafloorLife.counts,coverage:habitat.coverage,camera:camera.position.toArray(),azimuth:controls.getAzimuthalAngle(),polar:controls.getPolarAngle(),crabPositions:seafloorLife.positions(),bounds:swimBounds,moving,touchCount,lastTouched,selected:selected?.userData.name||null,fish:creatures.map(g=>({name:g.userData.name,mode:g.userData.swim.mode,visible:g.visible,direction:g.userData.swim.direction,heading:g.userData.swim.heading,entries:g.userData.swim.entries,exits:g.userData.swim.exits,wait:g.userData.swim.wait,reaction:g.userData.swim.reaction,screen:(()=>{const p=g.position.clone().project(camera);return[(p.x+1)*host.clientWidth/2,(1-p.y)*host.clientHeight/2,p.z];})(),large:!!g.userData.large,scale:g.scale.x,position:g.position.toArray(),forward:g.userData.forward.clone().applyQuaternion(g.quaternion).toArray(),velocity:Object.values(g.userData.swim.velocity),beat:g.userData.uniforms.uBeat.value,distance:g.userData.swim.distance}))});
@@ -391,8 +441,9 @@ function animate(now){
 }
 function updateLoop(){const active=inView&&!document.hidden&&!lost;if(active!==running){running=active;previous=performance.now();needsRender=true;renderer.setAnimationLoop(active?animate:null);stage.dataset.rendering=active?'active':'paused';}}
 new IntersectionObserver(entries=>{inView=entries[0].isIntersecting;updateLoop();}).observe(stage);document.addEventListener('visibilitychange',updateLoop);
-renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();lost=true;updateLoop();fail('Graphics context lost');});
+renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();tap.reset();feeding.clear();lost=true;updateLoop();fail('Graphics context lost');});
 renderer.domElement.addEventListener('webglcontextrestored',()=>{lost=false;stage.classList.remove('scene-unavailable');document.querySelector('#error').hidden=true;updateLoop();});
 overview();if(tween){camera.position.copy(tween.position);controls.target.copy(tween.target);tween=null;}controls.update();renderer.render(scene,camera);document.querySelector('#loading')?.remove();document.querySelectorAll('.scene-controls button,.creature-nav button,.fish-picker button').forEach(b=>b.disabled=false);stage.dataset.ready='true';updateLoop();
-if(location.hostname==='localhost'||location.hostname==='127.0.0.1')window.__ocean={renderer,scene,camera,creatures,controls,getState:()=>({selected:selected?.userData.name,moving,running,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles})};
+window.addEventListener('pagehide',e=>{if(!e.persisted)feeding.dispose();});
+if(location.hostname==='localhost'||location.hostname==='127.0.0.1')window.__ocean={renderer,scene,camera,creatures,controls,feeding,getState:()=>({selected:selected?.userData.name,moving,running,feeding:feeding.getState(),drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles})};
 }catch(error){fail(error);}

@@ -218,6 +218,7 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
     const selectors = [
       ['.header', 'header'],
       ['.control-bar'],
+      ['.object-info'],
       ['.bottom', 'footer'],
     ];
     const targets = [];
@@ -305,7 +306,8 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
       scaleY = Math.abs(fish.scale.y || fish.scale.x || 1);
     }
     const ry = Number(fish.userData?.ry);
-    worldPosition.y += Math.max(.06, Math.abs(Number.isFinite(ry) ? ry : .24) * scaleY);
+    const edge = Math.max(.06, Math.abs(Number.isFinite(ry) ? ry : .24) * scaleY);
+    worldPosition.y += active?.preferBelow ? -edge : edge;
 
     if (typeof camera.updateMatrixWorld === 'function') camera.updateMatrixWorld(true);
     if (typeof camera.getWorldPosition === 'function') camera.getWorldPosition(cameraPosition);
@@ -366,7 +368,8 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
       if (gap < BUBBLE_GAP * .5 || gap > Math.max(120, height * 1.8)) return null;
       const box = {left: left - width * .5, right: left + width * .5, top, bottom: top + height};
       if (blockers.some(rect => overlaps(box, rect, 8))) return null;
-      return {top, placement, gap, distance: Math.abs(top - (anchorY - BUBBLE_GAP - height))};
+      const preferredTop = active?.preferBelow ? anchorY + BUBBLE_GAP : anchorY - BUBBLE_GAP - height;
+      return {top, placement, gap, distance: Math.abs(top - preferredTop)};
     };
 
     const candidates = [
@@ -420,17 +423,18 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
     showBubble();
   }
 
-  function show(fish) {
+  function show(fish, message) {
     if (!fish || !fishIsVisible(fish)) {
       clear();
       return;
     }
     const name = String(fish.userData?.name || '小鱼');
-    const line = chooseLine(name);
+    const line = message || chooseLine(name);
     const announcement = `${name}：${line}`;
     const startedAt = clockNow();
     const duration = MIN_DURATION_MS + (showCount++ % DURATION_STEPS) * DURATION_STEP_MS;
-    active = {fish, name, line};
+    // Feeding replies sit below when space permits, leaving rising hearts clear.
+    active = {fish, name, line, preferBelow: Boolean(message)};
     expiresAt = startedAt + duration;
     lastAnnouncement = announcement;
     nameNode.textContent = name;
