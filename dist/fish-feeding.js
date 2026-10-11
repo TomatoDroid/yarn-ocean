@@ -79,8 +79,13 @@ export function createFishFeeding({THREE, scene, woolTexture, onEat}) {
     onEat(fish);
   }
 
+  function canFeed(fish, now=performance.now()) {
+    return Boolean(fish?.visible && fish.userData.swim.mode === 'crossing' &&
+      now-lastFeed >= FEED_INTERVAL_MS && foods.some(item => !item.fish));
+  }
+
   function feed(fish, point, {now=performance.now(), instant=false}={}) {
-    if (!fish?.visible || fish.userData.swim.mode !== 'crossing' || now-lastFeed < FEED_INTERVAL_MS) return false;
+    if (!canFeed(fish, now)) return false;
     const food = foods.find(item => !item.fish);
     if (!food) return false;
     lastFeed = now; fed++;
@@ -154,5 +159,5 @@ export function createFishFeeding({THREE, scene, woolTexture, onEat}) {
     for (const heart of hearts) heart.mesh.material.dispose();
   }
 
-  return {feed, update, clear, dispose, getState:() => ({fed, eaten, foods:foods.filter(f=>f.fish).length, hearts:hearts.filter(h=>h.mesh.visible).length, happy:happy.size})};
+  return {feed, canFeed, update, clear, dispose, getState:() => ({fed, eaten, foods:foods.filter(f=>f.fish).length, hearts:hearts.filter(h=>h.mesh.visible).length, happy:happy.size})};
 }
