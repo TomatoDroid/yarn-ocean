@@ -187,7 +187,7 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
 
   const worldPosition = new THREE.Vector3();
   const worldScale = new THREE.Vector3(1, 1, 1);
-  const projected = new THREE.Vector3();
+  const projectedEdges = {above: new THREE.Vector3(), below: new THREE.Vector3()};
   const cameraPosition = new THREE.Vector3();
   const cameraDirection = new THREE.Vector3();
   let active = null;
@@ -218,6 +218,7 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
     const selectors = [
       ['.header', 'header'],
       ['.control-bar'],
+      ['.object-info'],
       ['.bottom', 'footer'],
     ];
     const targets = [];
@@ -290,7 +291,7 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
     return swim?.mode !== 'waiting' && swim?.waiting !== true;
   }
 
-  function projectFishTop(fish, camera) {
+  function projectFishEdges(fish, camera) {
     if (!fishIsVisible(fish) || !camera) return null;
     if (typeof fish.updateMatrixWorld === 'function') fish.updateMatrixWorld(true);
     if (typeof fish.getWorldPosition === 'function') fish.getWorldPosition(worldPosition);
@@ -305,7 +306,7 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
       scaleY = Math.abs(fish.scale.y || fish.scale.x || 1);
     }
     const ry = Number(fish.userData?.ry);
-    worldPosition.y += Math.max(.06, Math.abs(Number.isFinite(ry) ? ry : .24) * scaleY);
+    const edge = Math.max(.06, Math.abs(Number.isFinite(ry) ? ry : .24) * scaleY);
 
     if (typeof camera.updateMatrixWorld === 'function') camera.updateMatrixWorld(true);
     if (typeof camera.getWorldPosition === 'function') camera.getWorldPosition(cameraPosition);
@@ -315,12 +316,17 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
       if (worldPosition.clone().sub(cameraPosition).dot(cameraDirection) <= 0) return null;
     }
 
-    projected.copy(worldPosition).project(camera);
-    if (![projected.x, projected.y, projected.z].every(Number.isFinite)) return null;
-    // NDC z is -1 at the near plane and +1 at the far plane. The explicit
-    // range check also rejects points behind a perspective camera.
-    if (projected.z < -1 || projected.z > 1 || projected.x < -1 || projected.x > 1 || projected.y < -1 || projected.y > 1) return null;
-    return projected;
+    const visibleEdges = {};
+    for (const [placement, direction] of [['above', 1], ['below', -1]]) {
+      const point = projectedEdges[placement].copy(worldPosition);
+      point.y += edge * direction;
+      point.project(camera);
+      // Each placement uses its own visible edge, including at viewport borders.
+      if (![point.x, point.y, point.z].every(Number.isFinite)) continue;
+      if (Math.abs(point.x) > 1 || Math.abs(point.y) > 1 || Math.abs(point.z) > 1) continue;
+      visibleEdges[placement] = point;
+    }
+    return visibleEdges.above || visibleEdges.below ? visibleEdges : null;
   }
 
   function relativeRect(rect, stageRect) {
@@ -336,7 +342,7 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
     return a.left < b.right + padding && a.right > b.left - padding && a.top < b.bottom + padding && a.bottom > b.top - padding;
   }
 
-  function placeBubble(projectedPoint, timestamp) {
+  function placeBubble(edges, timestamp) {
     const currentLayout = getLayout(timestamp);
     if (!currentLayout) return false;
     const {stageRect} = currentLayout;
@@ -345,50 +351,57 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
       : stageRect;
     if (!viewportRect.width || !viewportRect.height) return false;
 
-    const clientX = viewportRect.left + (projectedPoint.x + 1) * .5 * viewportRect.width;
-    const clientY = viewportRect.top + (1 - projectedPoint.y) * .5 * viewportRect.height;
-    const anchorX = clientX - stageRect.left;
-    const anchorY = clientY - stageRect.top;
+    const anchors = {};
+    for (const [placement, point] of Object.entries(edges)) {
+      anchors[placement] = {
+        x: viewportRect.left + (point.x + 1) * .5 * viewportRect.width - stageRect.left,
+        y: viewportRect.top + (1 - point.y) * .5 * viewportRect.height - stageRect.top,
+      };
+    }
     const measured = bubble.getBoundingClientRect();
     const width = Math.max(160, measured.width || bubble.offsetWidth || 220);
     const height = Math.max(58, measured.height || bubble.offsetHeight || 78);
     const pad = Math.max(EDGE_PAD, Math.min(22, stageRect.width * .04));
-    const left = clamp(anchorX, pad + width * .5, stageRect.width - pad - width * .5);
     const maxY = stageRect.height - pad - height;
     if (maxY < pad) return false;
 
     const blockers = currentLayout.blockers;
+    const preferred = active?.preferBelow && anchors.below ? 'below' : anchors.above ? 'above' : 'below';
+    const naturalTop = placement => anchors[placement].y + (placement === 'above' ? -BUBBLE_GAP - height : BUBBLE_GAP);
+    const preferredTop = naturalTop(preferred);
     const candidate = (y, placement) => {
+      const anchor = anchors[placement];
+      if (!anchor) return null;
+      const left = clamp(anchor.x, pad + width * .5, stageRect.width - pad - width * .5);
       const top = clamp(y, pad, maxY);
       // Keep the tail close to the fish. If every free band is far away, the
       // bubble would look detached and is better hidden until the fish moves.
-      const gap = placement === 'above' ? anchorY - (top + height) : top - anchorY;
+      const gap = placement === 'above' ? anchor.y - (top + height) : top - anchor.y;
       if (gap < BUBBLE_GAP * .5 || gap > Math.max(120, height * 1.8)) return null;
       const box = {left: left - width * .5, right: left + width * .5, top, bottom: top + height};
       if (blockers.some(rect => overlaps(box, rect, 8))) return null;
-      return {top, placement, gap, distance: Math.abs(top - (anchorY - BUBBLE_GAP - height))};
+      return {top, left, anchorX: anchor.x, placement, gap, distance: Math.abs(top - preferredTop)};
     };
 
-    const candidates = [
-      candidate(anchorY - BUBBLE_GAP - height, 'above'),
-      candidate(anchorY + BUBBLE_GAP, 'below'),
-    ].filter(Boolean);
+    const candidates = Object.keys(anchors).map(placement => candidate(naturalTop(placement), placement)).filter(Boolean);
 
     // If a fish is beside a responsive header/control block, look for the
     // closest free horizontal band instead of letting the bubble overlap it.
     if (!candidates.length) {
       const step = Math.max(6, Math.min(14, height * .2));
       for (let top = pad; top <= maxY; top += step) {
-        const item = candidate(top, top + height <= anchorY ? 'above' : 'below');
-        if (item) candidates.push(item);
+        for (const placement of Object.keys(anchors)) {
+          const item = candidate(top, placement);
+          if (item) candidates.push(item);
+        }
       }
     }
     if (!candidates.length) return false;
     candidates.sort((a, b) => a.distance - b.distance);
     const chosen = candidates[0];
-    bubble.style.left = `${Math.round(left)}px`;
+    bubble.style.left = `${Math.round(chosen.left)}px`;
     bubble.style.top = `${Math.round(chosen.top)}px`;
-    const tailX = clamp(anchorX - left + width * .5, 18, width - 18);
+    const tailX = clamp(chosen.anchorX - chosen.left + width * .5, 18, width - 18);
     bubble.style.setProperty('--tail-x', `${Math.round(tailX)}px`);
     bubble.dataset.placement = chosen.placement;
     return true;
@@ -412,25 +425,26 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
       bubble.classList.add('is-fading');
     }
 
-    const point = projectFishTop(active.fish, camera);
-    if (!point || !placeBubble(point, timestamp)) {
+    const edges = projectFishEdges(active.fish, camera);
+    if (!edges || !placeBubble(edges, timestamp)) {
       hideBubble(false);
       return;
     }
     showBubble();
   }
 
-  function show(fish) {
+  function show(fish, message) {
     if (!fish || !fishIsVisible(fish)) {
       clear();
       return;
     }
     const name = String(fish.userData?.name || '小鱼');
-    const line = chooseLine(name);
+    const line = message || chooseLine(name);
     const announcement = `${name}：${line}`;
     const startedAt = clockNow();
     const duration = MIN_DURATION_MS + (showCount++ % DURATION_STEPS) * DURATION_STEP_MS;
-    active = {fish, name, line};
+    // Feeding replies sit below when space permits, leaving rising hearts clear.
+    active = {fish, name, line, preferBelow: Boolean(message)};
     expiresAt = startedAt + duration;
     lastAnnouncement = announcement;
     nameNode.textContent = name;
