@@ -1,0 +1,122 @@
+[
+  {
+    "name": "柠檬潜水员",
+    "description": "绿背、蓝肚皮，顶着一枚柠檬黄的背鳍。",
+    "kind": "长身小鱼",
+    "image": "assets/fish-01.png"
+  },
+  {
+    "name": "可可泡泡",
+    "description": "方圆的棕色脸，紫色嘟嘴，还有不一样高的眼睛。",
+    "kind": "圆脸小鱼",
+    "image": "assets/fish-02.png"
+  },
+  {
+    "name": "柠檬小舟",
+    "description": "亮黄色的长身体，奶油色鱼腹与一对柔软的叉尾。",
+    "kind": "长身小鱼",
+    "image": "assets/fish-03.png"
+  },
+  {
+    "name": "莓果汽水",
+    "description": "玫红叠着淡紫，长长的身体接一条卷曲小尾巴。",
+    "kind": "长身小鱼",
+    "image": "assets/fish-04.png"
+  },
+  {
+    "name": "橘子扇",
+    "description": "像一枚蓬松的橘色贝壳，睁着薄荷绿的大眼睛。",
+    "kind": "扇形小鱼",
+    "image": "assets/fish-05.png"
+  },
+  {
+    "name": "蓝色蝴蝶",
+    "description": "宽宽的扇形身体和浅蓝尾鳍，像慢慢展开的翅膀。",
+    "kind": "扇形小鱼",
+    "image": "assets/fish-06.png"
+  },
+  {
+    "name": "蓝莓嘟嘟",
+    "description": "海蓝色圆脑袋，配一张忍不住想笑的珊瑚红大嘴。",
+    "kind": "圆脸小鱼",
+    "image": "assets/fish-07.png"
+  },
+  {
+    "name": "黑白小鲸",
+    "description": "黑背、白肚皮，两道白色绒条跨过身体，橙色背鳍轻轻翘起。",
+    "kind": "小鲸模样",
+    "image": "assets/fish-08.png"
+  },
+  {
+    "name": "玫瑰团子",
+    "description": "玫红色线圈叠成小团子，橙色短鳍伸向四周。",
+    "kind": "圆脸小鱼",
+    "image": "assets/fish-09.png"
+  },
+  {
+    "name": "海草精灵",
+    "description": "绿色圆脸，深绿耳朵一样的鱼鳍，一张小小的紫色嘴。",
+    "kind": "圆脸小鱼",
+    "image": "assets/fish-10.png"
+  },
+  {
+    "name": "樱花小扇",
+    "description": "轻轻压扁的粉色鱼身，黑色尾鳍让温柔多一点俏皮。",
+    "kind": "扇形小鱼",
+    "image": "assets/fish-11.png"
+  },
+  {
+    "name": "橙蓝小箭",
+    "description": "橙色与湖蓝一上一下，短短的尾巴，红红的小嘴。",
+    "kind": "长身小鱼",
+    "image": "assets/fish-12.png"
+  },
+  {
+    "name": "琥珀小梭",
+    "description": "细长的琥珀色鱼身，深青肚皮和奶油尾巴，轻快地穿过鱼群。",
+    "kind": "长身小鱼",
+    "image": "assets/fish-13.png"
+  },
+  {
+    "name": "葡萄小游侠",
+    "description": "梅紫色长身体，蜜桃色腹部，薄荷绿的小鳍在水里轻轻摆动。",
+    "kind": "长身小鱼",
+    "image": "assets/fish-14.png"
+  },
+  {
+    "name": "雾银泡泡",
+    "description": "象牙白与鼠尾草绿绕成软软的小圆球，铜橙色短鳍慢悠悠地划水。",
+    "kind": "圆脸小鱼",
+    "image": "assets/fish-15.png"
+  },
+  {
+    "name": "赤陶团团",
+    "description": "圆滚滚的赤陶红小鱼，奶油黄鱼腹，深紫色鱼鳍像两片小叶子。",
+    "kind": "圆脸小鱼",
+    "image": "assets/fish-16.png"
+  },
+  {
+    "name": "孔雀小扇",
+    "description": "孔雀青与珊瑚橙交叠，奶白色尾鳍托着一片小小的扇形身体。",
+    "kind": "扇形小鱼",
+    "image": "assets/fish-17.png"
+  },
+  {
+    "name": "姜饼小扇",
+    "description": "姜黄色绒圈叠着灰青色鱼腹，短短的奶白尾巴让它看起来格外俏皮。",
+    "kind": "扇形小鱼",
+    "image": "assets/fish-18.png"
+  },
+  {
+    "name": "斑点巡游鱼",
+    "description": "宽厚的靛蓝色大鱼，奶白绒点缀满鱼背。它摆动大尾鳍，从小鱼身边缓缓游过。",
+    "kind": "大型游鱼",
+    "image": "assets/fish-19.png"
+  },
+  {
+    "name": "金色领航鱼",
+    "description": "金色与奶油色交织的宽厚鱼身，舒展着大鱼鳍，在鱼群外侧悠然转弯。",
+    "kind": "大型游鱼",
+    "image": "assets/fish-20.png"
+  }
+]

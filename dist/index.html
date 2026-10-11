@@ -1,20 +1,64 @@
 <!doctype html>
 <html lang="zh-CN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b3c50"><meta name="color-scheme" content="dark"><meta name="referrer" content="strict-origin-when-cross-origin">
-<title>线织海洋 · 手作海洋馆</title><meta name="description" content="潜入一座柔软的手作海洋馆。二十只绒条小鱼游过海草、珊瑚与针织海床，在流动的光影里自在相遇。"><link rel="canonical" href="https://tomatodroid.github.io/yarn-ocean/">
+<title>线织海洋 · 喂小鱼，收下爱心泡泡</title>
+<meta name="description" content="走进毛线与绒条织成的海洋，认识二十位海底朋友。轻点喂小鱼，看它开心摆尾、吐出爱心泡泡，也能慢慢浏览鱼群图鉴。">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:site_name" content="线织海洋">
+<meta property="og:title" content="线织海洋 · 喂小鱼，收下爱心泡泡">
+<meta property="og:description" content="轻点喂一口毛线点心，看小鱼开心摆尾、吐出爱心。二十位柔软的海底朋友，等你慢慢认识。">
+<meta property="og:url" content="https://tomatodroid.github.io/yarn-ocean/">
+<meta property="og:image" content="https://tomatodroid.github.io/yarn-ocean/assets/ocean-cover.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="毛线小鱼游过绒线海草、珊瑚和针织海床的线织海洋场景">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="线织海洋 · 喂小鱼，收下爱心泡泡">
+<meta name="twitter:description" content="喂一口毛线点心，收下一颗小爱心。在柔软的手作海洋里认识二十位海底朋友。">
+<meta name="twitter:image" content="https://tomatodroid.github.io/yarn-ocean/assets/ocean-cover.jpg">
+<meta name="twitter:image:alt" content="毛线小鱼游过绒线海草、珊瑚和针织海床的线织海洋场景">
+<link rel="canonical" href="https://tomatodroid.github.io/yarn-ocean/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232a5047'/%3E%3Cellipse cx='15' cy='16' rx='9' ry='6' fill='%23eead43'/%3E%3Cpath d='M22 16l7-6v12z' fill='%23eead43'/%3E%3Ccircle cx='11' cy='15' r='2' fill='white'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css?v=20261010-feeding"><link rel="stylesheet" href="fish-picker.css?v=20261010-feeding"><link rel="stylesheet" href="fish-speech.css?v=20261010-feeding"><script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script></head>
+<link rel="stylesheet" href="style.css?v=20261011-experience"><link rel="stylesheet" href="fish-picker.css?v=20261011-experience"><link rel="stylesheet" href="fish-speech.css?v=20261011-experience"><link rel="stylesheet" href="ocean-fallback.css?v=20261011-experience"><script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script></head>
 <body>
 <a class="skip-link" href="#viewport">跳到互动海洋</a>
 <main id="stage" class="stage">
 <header class="header"><a class="brand" href="./" aria-label="线织海洋首页"><span class="brand-symbol" aria-hidden="true">✳</span><span>线织海洋<small>THE SOFT AQUARIUM</small></span></a><button id="help-toggle" class="help-toggle" aria-expanded="false" aria-controls="help">操作指南 <span aria-hidden="true">↗</span></button></header>
-<div class="title-block"><p class="eyebrow">A HANDMADE WORLD BENEATH THE WAVES</p><h1>潜入一片<br>柔软的海。</h1><p class="intro">把绒线变成海草，把想象织成珊瑚。<br>游鱼、贝壳与小蟹，在光影里自在相遇。<br><span id="feeding-note">轻点海水喂一口，收下一颗小爱心。</span></p></div>
+<div class="title-block"><p class="eyebrow">A HANDMADE WORLD BENEATH THE WAVES</p><h1>潜入一片<br>柔软的海。</h1><p class="intro">把绒线变成海草，把想象织成珊瑚。<br>游鱼、贝壳与小蟹，在光影里自在相遇。</p></div>
+<p id="feeding-note" class="feeding-note">轻点海水喂一口，收下一颗小爱心。</p>
 <div id="viewport" tabindex="0" role="region" aria-label="3D 手作海洋馆。轻点海水或游鱼投喂，吃到后会吐出爱心；底部鱼群图鉴跟随近看。拖动环顾四周，滚轮或双指缩放。左右方向键切换，Home 回到鱼群。"><div id="loading" role="status"><span class="loader"></span>小鱼正在游来…</div></div>
-<aside id="help" class="help" hidden><h2>慢慢看，自在游。</h2><p>拖动环顾四周 · 滚轮或双指缩放<br>轻点海水或游鱼，送出一颗毛线点心<br>鱼儿吃到后，会开心摆尾、吐出爱心<br>滑动底部图鉴，选择一条鱼跟随近看<br>左右方向键切换 · Home 返回鱼群<br>鱼儿从两侧游来，游出视野后再相遇</p><p>海草、绒线礁石和针织海床环绕四周。<br>毛线扇贝和三只小螃蟹住在海底。<br>「暂停」让居民和点心一起休息。<br>减少动态效果时，用静态爱心回应。</p></aside>
+<aside id="help" class="help" hidden><h2>慢慢看，自在游。</h2><p>拖动环顾四周 · 滚轮或双指缩放<br>轻点海水或游鱼，送出一颗毛线点心<br>鱼儿吃到后，会开心摆尾、吐出爱心<br>滑动底部图鉴，选择一条鱼跟随近看<br>选中后点「喂它一口」，也可用 Tab 和回车投喂<br>左右方向键切换 · Home 返回鱼群<br>鱼儿从两侧游来，游出视野后再相遇</p><p>海草、绒线礁石和针织海床环绕四周。<br>毛线扇贝和三只小螃蟹住在海底。<br>「暂停」让居民和点心一起休息。<br>减少动态效果时，用静态爱心回应。</p></aside>
 <span id="interaction-status" class="sr-only" role="status" aria-live="polite"></span>
-<div id="error" class="scene-error" role="alert" hidden><p>这片海暂时没能展开。</p><span>请确认浏览器已开启图形加速，或重新加载试试。</span><button id="retry-scene">重新加载</button></div>
-<div class="object-info"><span id="fish-count" class="eyebrow">20 种模样 · 一片海</span><h2 id="name" aria-live="polite">绒绒浅海</h2><p id="description">在珊瑚与海草之间，遇见柔软的海洋居民。</p><div id="swatches" class="swatches" aria-hidden="true"></div></div>
+<section id="ocean-fallback" class="ocean-fallback" aria-labelledby="fallback-title" tabindex="-1" hidden>
+<figure class="fallback-cover"><img src="assets/ocean-cover.jpg" width="1200" height="630" loading="lazy" decoding="async" alt="毛线小鱼游过绒线海草、珊瑚和针织海床的线织海洋场景"><figcaption>线织海洋 · 手作海洋馆</figcaption></figure>
+<div class="fallback-intro"><p class="eyebrow">认识海里的朋友</p><h2 id="fallback-title">先翻翻这本海底图鉴。</h2><div id="error" class="fallback-message" role="status" hidden><p>互动海洋暂时无法展开，这里仍能看看二十位毛线朋友。</p></div><p>向下浏览它们的名字和模样；用 Tab 键也能逐张查看。</p><a id="retry-scene" class="fallback-retry" href="./">重新加载互动海洋 <span aria-hidden="true">↗</span></a></div>
+<ul id="fallback-catalog" class="fallback-catalog" aria-label="二十位毛线海洋朋友的静态图鉴">
+<li class="fallback-card" tabindex="0"><img src="assets/fish-01.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">长身小鱼</p><h3>柠檬潜水员</h3><p class="fallback-card-description">绿背、蓝肚皮，顶着一枚柠檬黄的背鳍。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-02.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">圆脸小鱼</p><h3>可可泡泡</h3><p class="fallback-card-description">方圆的棕色脸，紫色嘟嘴，还有不一样高的眼睛。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-03.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">长身小鱼</p><h3>柠檬小舟</h3><p class="fallback-card-description">亮黄色的长身体，奶油色鱼腹与一对柔软的叉尾。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-04.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">长身小鱼</p><h3>莓果汽水</h3><p class="fallback-card-description">玫红叠着淡紫，长长的身体接一条卷曲小尾巴。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-05.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">扇形小鱼</p><h3>橘子扇</h3><p class="fallback-card-description">像一枚蓬松的橘色贝壳，睁着薄荷绿的大眼睛。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-06.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">扇形小鱼</p><h3>蓝色蝴蝶</h3><p class="fallback-card-description">宽宽的扇形身体和浅蓝尾鳍，像慢慢展开的翅膀。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-07.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">圆脸小鱼</p><h3>蓝莓嘟嘟</h3><p class="fallback-card-description">海蓝色圆脑袋，配一张忍不住想笑的珊瑚红大嘴。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-08.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">长身小鱼</p><h3>黑白小鲸</h3><p class="fallback-card-description">黑背、白肚皮，两道白色绒条跨过身体，橙色背鳍轻轻翘起。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-09.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">圆脸小鱼</p><h3>玫瑰团子</h3><p class="fallback-card-description">玫红色线圈叠成小团子，橙色短鳍伸向四周。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-10.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">圆脸小鱼</p><h3>海草精灵</h3><p class="fallback-card-description">绿色圆脸，深绿耳朵一样的鱼鳍，一张小小的紫色嘴。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-11.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">扇形小鱼</p><h3>樱花小扇</h3><p class="fallback-card-description">轻轻压扁的粉色鱼身，黑色尾鳍让温柔多一点俏皮。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-12.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">长身小鱼</p><h3>橙蓝小箭</h3><p class="fallback-card-description">橙色与湖蓝一上一下，短短的尾巴，红红的小嘴。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-13.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">长身小鱼</p><h3>琥珀小梭</h3><p class="fallback-card-description">细长的琥珀色鱼身，深青肚皮和奶油尾巴，轻快地穿过鱼群。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-14.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">长身小鱼</p><h3>葡萄小游侠</h3><p class="fallback-card-description">梅紫色长身体，蜜桃色腹部，薄荷绿的小鳍在水里轻轻摆动。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-15.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">圆脸小鱼</p><h3>雾银泡泡</h3><p class="fallback-card-description">象牙白与鼠尾草绿绕成软软的小圆球，铜橙色短鳍慢悠悠地划水。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-16.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">圆脸小鱼</p><h3>赤陶团团</h3><p class="fallback-card-description">圆滚滚的赤陶红小鱼，奶油黄鱼腹，深紫色鱼鳍像两片小叶子。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-17.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">扇形小鱼</p><h3>孔雀小扇</h3><p class="fallback-card-description">孔雀青与珊瑚橙交叠，奶白色尾鳍托着一片小小的扇形身体。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-18.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">扇形小鱼</p><h3>姜饼小扇</h3><p class="fallback-card-description">姜黄色绒圈叠着灰青色鱼腹，短短的奶白尾巴让它看起来格外俏皮。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-19.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">大型游鱼</p><h3>斑点巡游鱼</h3><p class="fallback-card-description">宽厚的靛蓝色大鱼，奶白绒点缀满鱼背。它摆动大尾鳍，从小鱼身边缓缓游过。</p></div></li>
+<li class="fallback-card" tabindex="0"><img src="assets/fish-20.png" width="256" height="144" loading="lazy" decoding="async" alt=""><div class="fallback-card-copy"><p class="fallback-card-kind">大型游鱼</p><h3>金色领航鱼</h3><p class="fallback-card-description">金色与奶油色交织的宽厚鱼身，舒展着大鱼鳍，在鱼群外侧悠然转弯。</p></div></li>
+</ul>
+</section>
+<div class="object-info"><span id="fish-count" class="eyebrow">20 种模样 · 一片海</span><h2 id="name" aria-live="polite">绒绒浅海</h2><div class="feed-action"><button id="feed-selected" type="button" disabled aria-disabled="true" aria-describedby="feed-state">喂它一口</button><span id="feed-state" class="sr-only" role="status" aria-live="polite"></span></div><p id="description">在珊瑚与海草之间，遇见柔软的海洋居民。</p><div id="swatches" class="swatches" aria-hidden="true"></div></div>
 <div class="control-bar"><div class="creature-nav"><button id="previous-fish" disabled aria-label="上一只小鱼">←</button><button id="next-fish" disabled aria-label="下一只小鱼">→</button></div><div class="scene-controls" role="group" aria-label="展厅控制"><button id="motion" disabled aria-pressed="true">暂停</button><button id="reset" disabled>回到鱼群 <span aria-hidden="true">↗</span></button></div></div>
 <footer class="bottom"><div class="picker-heading"><div class="picker-heading-copy"><h2>认识海里的朋友</h2><span id="school-count" class="eyebrow">20 条游鱼 · 3 只小蟹</span></div><div class="picker-actions"><span class="picker-hint">点选近看 · 轻点海水喂一口</span><button id="picker-previous" type="button" disabled aria-label="向前浏览鱼群图鉴">←</button><button id="picker-next" type="button" aria-label="向后浏览鱼群图鉴">→</button></div></div><div id="fish-picker" class="fish-picker" role="group" aria-label="鱼群图鉴，左右滑动浏览，点击近看"></div></footer>
-<noscript><div class="noscript">这是一座互动 3D 海洋，请启用 JavaScript 后探索。</div><style>#loading{display:none}</style></noscript>
-</main><script type="module" src="app.js?v=20261010-feeding"></script></body></html>
+<noscript><p class="fallback-noscript">目前正在浏览静态图鉴。启用 JavaScript 后重新加载，即可尝试互动海洋。</p><style>.stage{height:auto!important;min-height:100svh!important;overflow:visible!important}.stage:after,#viewport,.title-block,.object-info,.control-bar,.bottom,.help,.help-toggle,#feeding-note{display:none!important}.header{position:relative;inset:auto;padding:26px 5%}.ocean-fallback[hidden]{display:block!important}</style></noscript>
+</main><script type="module" src="app.js?v=20261011-experience"></script></body></html>

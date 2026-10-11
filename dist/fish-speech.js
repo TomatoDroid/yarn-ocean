@@ -219,6 +219,7 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
       ['.header', 'header'],
       ['.control-bar'],
       ['.object-info'],
+      ['#feeding-note'],
       ['.bottom', 'footer'],
     ];
     const targets = [];

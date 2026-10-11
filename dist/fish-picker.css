@@ -37,3 +37,18 @@
   .stage[data-view="detail"] .object-info h2{font-size:21px}.stage[data-view="detail"] .object-info p{font-size:11px}
 }
 @media(max-height:720px) and (max-width:700px){.title-block{top:95px}.title-block h1{font-size:25px;margin:9px 0}.title-block .intro{display:none}.stage[data-view="detail"] .object-info p,.stage[data-view="detail"] .swatches{display:none}.stage[data-view="detail"] .object-info{width:auto;max-width:90%}.stage[data-view="detail"] .object-info h2{font-size:19px;margin-bottom:0}}
+
+/* A short, independent hint remains visible when the mobile introduction hides. */
+.feeding-note{position:absolute;top:342px;left:4%;z-index:2;max-width:285px;margin:0;padding:8px 12px;border:1px dashed #cfdfcd55;border-radius:12px;background:#103e50c9;color:#eee5cd;font-size:11px;line-height:1.7;pointer-events:none}
+.stage[data-view="detail"] .feeding-note{top:105px}
+.stage[data-view="detail"] .object-info{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 16px;max-width:360px;text-align:left}
+.object-info #fish-count,.object-info #description,.object-info #swatches{grid-column:1 / -1}
+.object-info #name{grid-column:1;grid-row:2}
+.object-info #description{margin-left:0;max-width:none}
+.object-info #swatches{justify-content:flex-start}
+.feed-action{grid-column:2;grid-row:2;pointer-events:auto}
+#feed-selected{min-width:96px;min-height:44px;padding:10px 14px;border:1px dashed #85785b;border-radius:24px;background:#e9e1c9;color:#173f48;font-size:12px;white-space:nowrap;box-shadow:0 0 0 3px #e9e1c922}
+#feed-selected:hover:not([aria-disabled="true"]){background:#fff0cd}
+#feed-selected[aria-disabled="true"]{opacity:.65;cursor:default}
+@media(max-width:700px){.feeding-note{top:230px;left:6%;right:6%;max-width:none;width:fit-content;font-size:10px}.stage[data-view="detail"] .feeding-note{top:96px}.stage[data-view="detail"] .object-info{width:90%;max-width:none;gap:0 10px}.object-info #name{min-width:0}#feed-selected{padding:10px 12px;min-width:92px;font-size:11px}}
+@media(max-height:720px) and (max-width:700px){.feeding-note{top:169px}.stage[data-view="detail"] .object-info{width:90%;max-width:none}.stage[data-view="detail"] .object-info #name{margin:4px 0}.stage[data-view="detail"] .object-info .feed-action{grid-row:1 / 3}}

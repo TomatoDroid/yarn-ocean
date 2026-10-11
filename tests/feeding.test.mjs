@@ -68,10 +68,13 @@ function appearance(objects) {
 test('rapid taps are throttled and each accepted snack is eaten exactly once', t => {
   const {feeding, fish, eaten} = setup(t);
   const point = new THREE.Vector3(-3, 2, 0);
+  assert.equal(feeding.canFeed(fish, 0), true);
   assert.equal(feeding.feed(fish, point, {now: 0}), true);
   for (const now of [1, 50, 200, FEED_INTERVAL_MS - 1]) {
+    assert.equal(feeding.canFeed(fish, now), false);
     assert.equal(feeding.feed(fish, point, {now}), false);
   }
+  assert.equal(feeding.canFeed(fish, FEED_INTERVAL_MS), true);
   assert.equal(feeding.feed(fish, point, {now: FEED_INTERVAL_MS}), true);
   assert.equal(eaten.length, 0, 'a tap alone must not show the successful eating response');
   advance(feeding, 6, {now: 500});
@@ -108,6 +111,7 @@ test('full food and heart pools bound a burst and remain reusable without adding
   for (let i = 0; i < FOOD_LIMIT; i++) {
     assert.equal(feeding.feed(fish, point, {now: i * FEED_INTERVAL_MS}), true);
   }
+  assert.equal(feeding.canFeed(fish, FOOD_LIMIT * FEED_INTERVAL_MS), false);
   assert.equal(feeding.feed(fish, point, {now: FOOD_LIMIT * FEED_INTERVAL_MS}), false);
   assert.equal(fixture.foods().length, FOOD_LIMIT);
   assert.equal(feeding.getState().fed, FOOD_LIMIT);

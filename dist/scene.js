@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import {showSceneFallback,hideSceneFallback} from './app.js?v=20261011-experience';
 import {OrbitControls} from './vendor/OrbitControls.js';
 import {createFishPicker} from './fish-picker.js?v=20261009-fish-talk';
-import {createFishSpeech} from './fish-speech.js?v=20261010-feeding';
-import {createFishFeeding} from './fish-feeding.js?v=20261010-feeding';
+import {createFishSpeech} from './fish-speech.js?v=20261011-experience';
+import {createFishFeeding} from './fish-feeding.js?v=20261011-experience';
 import {createTapGesture} from './pointer-tap.js?v=20261010-feeding';
 import {createSwimmer,stepSchool,touchSwimmer,toLane} from './swimming.js?v=20261005-surround';
 import {createHabitat} from './habitat.js?v=20261005-surround';
@@ -13,7 +14,7 @@ const mobile=()=>host.clientWidth<700;
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 let seed=37;
 const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
-function fail(error){document.querySelector('#loading')?.remove();document.querySelector('#error').hidden=false;stage.classList.add('scene-unavailable');console.error(error);}
+function fail(error){showSceneFallback(error);}
 try{
 const scene=new THREE.Scene();
 const waterCanvas=document.createElement('canvas');waterCanvas.width=32;waterCanvas.height=512;
@@ -301,6 +302,8 @@ const particles=new THREE.Points(particleGeometry,particleMaterial);scene.add(pa
 const fishPicker=createFishPicker({definitions,creatures,renderer,onSelect:g=>focusFish(g),reduced});
 const fishSpeech=createFishSpeech({THREE,host,stage,status:document.querySelector('#interaction-status'),reduced});
 const feedingNote=document.querySelector('#feeding-note');
+const feedButton=document.querySelector('#feed-selected'),feedState=document.querySelector('#feed-state');
+let feedButtonState='';
 const feeding=createFishFeeding({THREE,scene,woolTexture,onEat:g=>{fishSpeech.show(g,'好喜欢这一口！送你一颗小爱心。');feedingNote.textContent=`${g.userData.name}吃到啦，开心地吐出爱心。`;needsRender=true;}});
 const frustum=new THREE.Frustum(),viewProjection=new THREE.Matrix4(),fishSphere=new THREE.Sphere();
 function updateWindowBounds(){
@@ -325,12 +328,12 @@ function touchFish(g,point){
 }
 let selected=null,moving=!reduced.matches,tween=null,time=0,motionBlend=0,previous=performance.now(),needsRender=true,running=false,lost=false,inView=true;
 function setView(position,target){if(reduced.matches){camera.position.copy(position);controls.target.copy(target);tween=null;}else tween={position,target};needsRender=true;}
-function syncInfo(){const d=selected?.userData;document.querySelector('#fish-count').textContent=d?`${String(d.index+1).padStart(2,'0')} / ${definitions.length} · ${d.large?'大型游鱼':d.kind==='round'?'圆脸小鱼':d.kind==='fan'?'扇形小鱼':'长身小鱼'}`:`${definitions.length} 种模样 · 一片海`;document.querySelector('#school-count').textContent=`${definitions.length} 条游鱼 · 3 只小蟹`;document.querySelector('#name').textContent=d?d.name:'绒绒浅海';document.querySelector('#description').textContent=d?d.desc:'在珊瑚与海草之间，遇见柔软的海洋居民。';document.querySelector('#swatches').replaceChildren();if(d)for(const color of d.colors){const dot=document.createElement('i');dot.style.background=color;document.querySelector('#swatches').appendChild(dot);}fishPicker.sync(selected);}
+function syncInfo(){const d=selected?.userData;document.querySelector('#fish-count').textContent=d?`${String(d.index+1).padStart(2,'0')} / ${definitions.length} · ${d.large?'大型游鱼':d.kind==='round'?'圆脸小鱼':d.kind==='fan'?'扇形小鱼':'长身小鱼'}`:`${definitions.length} 种模样 · 一片海`;document.querySelector('#school-count').textContent=`${definitions.length} 条游鱼 · 3 只小蟹`;document.querySelector('#name').textContent=d?d.name:'绒绒浅海';document.querySelector('#description').textContent=d?d.desc:'在珊瑚与海草之间，遇见柔软的海洋居民。';document.querySelector('#swatches').replaceChildren();if(d)for(const color of d.colors){const dot=document.createElement('i');dot.style.background=color;document.querySelector('#swatches').appendChild(dot);}fishPicker.sync(selected);syncFeedButton();}
 function overview(){
   feeding.clear();
   fishSpeech.clear();
   if(selected){selected.userData.swim.inspect=false;selected.userData.swim.anchor=null;}
-  selected=null;stage.dataset.view='overview';habitat.setDetail(false);root.children.forEach(c=>c.visible=c.userData.swim.mode==='crossing');particles.visible=true;
+  selected=null;feedingNote.textContent='轻点海水喂一口，收下一颗小爱心。';stage.dataset.view='overview';habitat.setDetail(false);root.children.forEach(c=>c.visible=c.userData.swim.mode==='crossing');particles.visible=true;
   const center=mobile()?V(0,-.15,0):V(0,-.20,0);
   const distance=mobile()?Math.max(14.2,7.3/(2*Math.tan(THREE.MathUtils.degToRad(17))*camera.aspect)):Math.max(14.8,15.2/(2*Math.tan(THREE.MathUtils.degToRad(17))*camera.aspect));
   setView(center.clone().add(V(.15,1.15,distance)),center);syncInfo();
@@ -342,7 +345,7 @@ function focusFish(g){
   const swim=g.userData.swim;
   if(swim.mode==='waiting'||!g.visible){swim.mode='crossing';swim.position={x:0,y:.7,z:0};swim.laneY=.7;swim.laneZ=0;g.position.set(0,.7,0);}
   swim.inspect=true;swim.anchor={...swim.position};swim.velocity={x:0,y:0,z:0};
-  selected=g;stage.dataset.view='detail';habitat.setDetail(true);root.children.forEach(c=>c.visible=c===g);particles.visible=true;
+  selected=g;feedingNote.textContent='点「喂它一口」，或轻点海水投喂。';stage.dataset.view='detail';habitat.setDetail(true);root.children.forEach(c=>c.visible=c===g);particles.visible=true;
   // Track the fish instead of pinning it in place. A generous spherical fit allows it to turn.
   const extent=(g.userData.kind==='round'?1.6:2*g.userData.rx+.6)*g.scale.x;
   const tangent=Math.tan(THREE.MathUtils.degToRad(17));
@@ -353,10 +356,46 @@ function focusFish(g){
 }
 function cycle(dir){const current=selected?creatures.indexOf(selected):(dir>0?-1:0);focusFish(creatures[(current+dir+creatures.length)%creatures.length]);}
 document.querySelector('#previous-fish').onclick=()=>cycle(-1);document.querySelector('#next-fish').onclick=()=>cycle(1);document.querySelector('#reset').onclick=overview;
-const motion=document.querySelector('#motion');function label(){motion.textContent=moving?'暂停':'播放';motion.setAttribute('aria-pressed',String(moving));}label();motion.onclick=()=>{moving=!moving;if(moving)motionBlend=0;label();needsRender=true;};reduced.addEventListener('change',()=>{feeding.clear();moving=!reduced.matches;motionBlend=0;label();needsRender=true;});
+const motion=document.querySelector('#motion');function label(){motion.textContent=moving?'暂停':'播放';motion.setAttribute('aria-pressed',String(moving));syncFeedButton();}label();motion.onclick=()=>{moving=!moving;if(moving)motionBlend=0;label();needsRender=true;};reduced.addEventListener('change',()=>{feeding.clear();moving=!reduced.matches;motionBlend=0;label();needsRender=true;});
 controls.addEventListener('start',()=>{tween=null;});controls.addEventListener('change',()=>needsRender=true);
 const ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),tap=createTapGesture();
 const feedPlane=new THREE.Plane(),feedPoint=V(),projectedFish=V(),viewNormal=V();
+function syncFeedButton(now=performance.now()){
+  const unavailable=lost||!selected?.visible||selected.userData.swim.mode!=='crossing';
+  const paused=!moving&&!reduced.matches;
+  const state=unavailable?'unavailable':paused?'paused':feeding.canFeed(selected,now)?'ready':'cooldown';
+  const key=`${selected?.userData.name}:${state}`;
+  if(key===feedButtonState)return;
+  feedButtonState=key;
+  const labels={ready:'喂它一口',cooldown:'稍等一下',paused:'先点播放',unavailable:'暂不能投喂'};
+  feedButton.textContent=labels[state];
+  feedButton.setAttribute('aria-disabled',String(state!=='ready'));
+  feedButton.setAttribute('aria-label',state==='ready'?`喂它一口，给${selected.userData.name}一颗点心`:labels[state]);
+  feedState.textContent=state==='paused'?'小鱼在休息，点播放后可以投喂。':state==='cooldown'?'点心正在准备，很快可以再喂。':state==='ready'?'可以投喂这条小鱼。':'选中一条小鱼后可以投喂。';
+}
+function offerFood(target,point){
+  if(lost||!target)return false;
+  if(!moving&&!reduced.matches){
+    feedingNote.textContent='小鱼在休息，点「播放」后再喂一口。';
+    fishSpeech.show(target,'先点「播放」，我就来吃点心。');
+    return false;
+  }
+  const accepted=feeding.feed(target,point,{instant:reduced.matches});
+  if(accepted){
+    if(!reduced.matches)feedingNote.textContent=`给${target.userData.name}的一颗毛线点心…`;
+    needsRender=true;
+  }
+  syncFeedButton();
+  return accepted;
+}
+// A native button keeps Enter/Space and touch on the same feeding path as water taps.
+feedButton.addEventListener('click',()=>{
+  if(!selected||feedButton.getAttribute('aria-disabled')==='true')return;
+  selected.updateWorldMatrix(true,false);
+  const point=selected.localToWorld(selected.userData.mouthPoint.clone());
+  point.add(V(.15,.6,.45).applyQuaternion(camera.quaternion));
+  offerFood(selected,point);
+});
 function feedAtPointer(e){
   const rect=renderer.domElement.getBoundingClientRect();
   pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
@@ -379,14 +418,10 @@ function feedAtPointer(e){
     }
   }
   if(!target){feedingNote.textContent='等小鱼游近一点，再喂一口吧。';return;}
-  if(!moving&&!reduced.matches){feedingNote.textContent='小鱼在休息，点「播放」后再喂一口。';fishSpeech.show(target,'先点「播放」，我就来吃点心。');return;}
   camera.getWorldDirection(viewNormal);
   feedPlane.setFromNormalAndCoplanarPoint(viewNormal,target.position);
   if(!ray.ray.intersectPlane(feedPlane,feedPoint))return;
-  if(feeding.feed(target,feedPoint,{instant:reduced.matches})){
-    if(!reduced.matches)feedingNote.textContent=`给${target.userData.name}的一颗毛线点心…`;
-    needsRender=true;
-  }
+  offerFood(target,feedPoint);
 }
 renderer.domElement.addEventListener('pointerdown',e=>tap.down(e,performance.now()));
 renderer.domElement.addEventListener('pointermove',e=>tap.move(e));
@@ -432,6 +467,7 @@ function animate(now){
   }
   controls.update();
   needsRender=feeding.update(dt,{now,moving,reduced:reduced.matches})||needsRender;
+  syncFeedButton(now);
   for(const g of creatures)g.userData.uniforms.uJoy.value=g.userData.feedingJoy||0;
   fishSpeech.update(camera,now);if(moving||needsRender){renderer.render(scene,camera);needsRender=false;}
   // Local verification data only; no telemetry or diagnostics UI is shipped to visitors.
@@ -441,9 +477,9 @@ function animate(now){
 }
 function updateLoop(){const active=inView&&!document.hidden&&!lost;if(active!==running){running=active;previous=performance.now();needsRender=true;renderer.setAnimationLoop(active?animate:null);stage.dataset.rendering=active?'active':'paused';}}
 new IntersectionObserver(entries=>{inView=entries[0].isIntersecting;updateLoop();}).observe(stage);document.addEventListener('visibilitychange',updateLoop);
-renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();tap.reset();feeding.clear();lost=true;updateLoop();fail('Graphics context lost');});
-renderer.domElement.addEventListener('webglcontextrestored',()=>{lost=false;stage.classList.remove('scene-unavailable');document.querySelector('#error').hidden=true;updateLoop();});
-overview();if(tween){camera.position.copy(tween.position);controls.target.copy(tween.target);tween=null;}controls.update();renderer.render(scene,camera);document.querySelector('#loading')?.remove();document.querySelectorAll('.scene-controls button,.creature-nav button,.fish-picker button').forEach(b=>b.disabled=false);stage.dataset.ready='true';updateLoop();
+renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();tap.reset();feeding.clear();lost=true;syncFeedButton();updateLoop();fail('Graphics context lost');});
+renderer.domElement.addEventListener('webglcontextrestored',()=>{lost=false;hideSceneFallback();syncFeedButton();needsRender=true;updateLoop();});
+overview();if(tween){camera.position.copy(tween.position);controls.target.copy(tween.target);tween=null;}controls.update();renderer.render(scene,camera);document.querySelector('#loading')?.remove();document.querySelectorAll('.scene-controls button,.creature-nav button,.fish-picker button').forEach(b=>b.disabled=false);stage.dataset.ready='true';feedButton.disabled=false;hideSceneFallback();syncFeedButton();updateLoop();
 window.addEventListener('pagehide',e=>{if(!e.persisted)feeding.dispose();});
 if(location.hostname==='localhost'||location.hostname==='127.0.0.1')window.__ocean={renderer,scene,camera,creatures,controls,feeding,getState:()=>({selected:selected?.userData.name,moving,running,feeding:feeding.getState(),drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles})};
 }catch(error){fail(error);}
