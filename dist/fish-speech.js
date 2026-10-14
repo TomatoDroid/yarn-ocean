@@ -221,6 +221,7 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
       ['.object-info'],
       ['#feeding-note'],
       ['.bottom', 'footer'],
+      ['#knit'],
     ];
     const targets = [];
     const seen = new Set();
@@ -256,8 +257,8 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
     return layout;
   }
 
-  function chooseLine(name) {
-    const options = LINES[name] || FALLBACK_LINES;
+  function chooseLine(name, own) {
+    const options = (Array.isArray(own) && own.length ? own : null) || LINES[name] || FALLBACK_LINES;
     const cursor = phraseCursor.get(name) || 0;
     let index = cursor % options.length;
     const previous = lastPhrase.get(name);
@@ -440,7 +441,7 @@ export function createFishSpeech({THREE, host, stage, status, reduced} = {}) {
       return;
     }
     const name = String(fish.userData?.name || '小鱼');
-    const line = message || chooseLine(name);
+    const line = message || chooseLine(name, fish.userData?.lines);
     const announcement = `${name}：${line}`;
     const startedAt = clockNow();
     const duration = MIN_DURATION_MS + (showCount++ % DURATION_STEPS) * DURATION_STEP_MS;

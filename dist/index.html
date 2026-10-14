@@ -21,15 +21,22 @@
 <meta name="twitter:image:alt" content="毛线小鱼游过绒线海草、珊瑚和针织海床的线织海洋场景">
 <link rel="canonical" href="https://tomatodroid.github.io/yarn-ocean/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232a5047'/%3E%3Cellipse cx='15' cy='16' rx='9' ry='6' fill='%23eead43'/%3E%3Cpath d='M22 16l7-6v12z' fill='%23eead43'/%3E%3Ccircle cx='11' cy='15' r='2' fill='white'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css?v=20261011-experience"><link rel="stylesheet" href="fish-picker.css?v=20261011-experience"><link rel="stylesheet" href="fish-speech.css?v=20261011-experience"><link rel="stylesheet" href="ocean-fallback.css?v=20261011-experience"><script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script></head>
+<link rel="stylesheet" href="style.css?v=20261011-experience"><link rel="stylesheet" href="fish-picker.css?v=20261014-knit"><link rel="stylesheet" href="fish-speech.css?v=20261011-experience"><link rel="stylesheet" href="ocean-fallback.css?v=20261011-experience"><link rel="stylesheet" href="fish-knit.css?v=20261014-knit"><script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script></head>
 <body>
 <a class="skip-link" href="#viewport">跳到互动海洋</a>
 <main id="stage" class="stage">
-<header class="header"><a class="brand" href="./" aria-label="线织海洋首页"><span class="brand-symbol" aria-hidden="true">✳</span><span>线织海洋<small>THE SOFT AQUARIUM</small></span></a><button id="help-toggle" class="help-toggle" aria-expanded="false" aria-controls="help">操作指南 <span aria-hidden="true">↗</span></button></header>
+<header class="header"><a class="brand" href="./" aria-label="线织海洋首页"><span class="brand-symbol" aria-hidden="true">✳</span><span>线织海洋<small>THE SOFT AQUARIUM</small></span></a><div class="header-actions"><button id="knit-toggle" class="help-toggle knit-toggle" type="button" aria-expanded="false" aria-controls="knit" disabled>织一条鱼 <span aria-hidden="true">＋</span></button><button id="help-toggle" class="help-toggle" aria-expanded="false" aria-controls="help">操作指南 <span aria-hidden="true">↗</span></button></div></header>
 <div class="title-block"><p class="eyebrow">A HANDMADE WORLD BENEATH THE WAVES</p><h1>潜入一片<br>柔软的海。</h1><p class="intro">把绒线变成海草，把想象织成珊瑚。<br>游鱼、贝壳与小蟹，在光影里自在相遇。</p></div>
 <p id="feeding-note" class="feeding-note">轻点海水喂一口，收下一颗小爱心。</p>
 <div id="viewport" tabindex="0" role="region" aria-label="3D 手作海洋馆。轻点海水或游鱼投喂，吃到后会吐出爱心；底部鱼群图鉴跟随近看。拖动环顾四周，滚轮或双指缩放。左右方向键切换，Home 回到鱼群。"><div id="loading" role="status"><span class="loader"></span>小鱼正在游来…</div></div>
-<aside id="help" class="help" hidden><h2>慢慢看，自在游。</h2><p>拖动环顾四周 · 滚轮或双指缩放<br>轻点海水或游鱼，送出一颗毛线点心<br>鱼儿吃到后，会开心摆尾、吐出爱心<br>滑动底部图鉴，选择一条鱼跟随近看<br>选中后点「喂它一口」，也可用 Tab 和回车投喂<br>左右方向键切换 · Home 返回鱼群<br>鱼儿从两侧游来，游出视野后再相遇</p><p>海草、绒线礁石和针织海床环绕四周。<br>毛线扇贝和三只小螃蟹住在海底。<br>「暂停」让居民和点心一起休息。<br>减少动态效果时，用静态爱心回应。</p></aside>
+<aside id="help" class="help" hidden><h2>慢慢看，自在游。</h2><p>拖动环顾四周 · 滚轮或双指缩放<br>轻点海水或游鱼，送出一颗毛线点心<br>鱼儿吃到后，会开心摆尾、吐出爱心<br>滑动底部图鉴，选择一条鱼跟随近看<br>选中后点「喂它一口」，也可用 Tab 和回车投喂<br>左右方向键切换 · Home 返回鱼群<br>鱼儿从两侧游来，游出视野后再相遇</p><p>点「织一条鱼」挑体型、颜色和名字，<br>复制链接发给朋友，鱼会游进他们的海。</p><p>海草、绒线礁石和针织海床环绕四周。<br>毛线扇贝和三只小螃蟹住在海底。<br>「暂停」让居民和点心一起休息。<br>减少动态效果时，用静态爱心回应。</p></aside>
+<aside id="knit" class="knit" tabindex="-1" aria-labelledby="knit-title" hidden><div class="knit-head"><div><p class="eyebrow">KNIT YOUR OWN FISH</p><h2 id="knit-title">织一条鱼</h2></div><button id="knit-close" type="button" class="knit-close" aria-label="收起织鱼面板">×</button></div>
+<form id="knit-form" class="knit-form" novalidate><label class="knit-field"><span class="knit-label">名字</span><input id="knit-name" name="name" type="text" maxlength="8" autocomplete="off" enterkeyhint="done" placeholder="我的毛线鱼"></label>
+<fieldset class="knit-kinds"><legend class="knit-label">体型</legend><div id="knit-kinds" class="knit-segments"></div></fieldset>
+<div id="knit-colors" class="knit-colors"></div>
+<div class="knit-actions"><button id="knit-random" type="button">换一团线</button><button id="knit-share" type="submit" class="knit-primary">复制分享链接</button></div>
+<p id="knit-status" class="knit-status" role="status" aria-live="polite"></p><input id="knit-link" class="knit-link" type="url" readonly aria-label="分享链接" hidden>
+<p class="knit-note">你的鱼只保存在这个浏览器里；分享链接带着它的颜色和名字。<button id="knit-remove" type="button" class="knit-remove">拆掉这条鱼</button></p></form></aside>
 <span id="interaction-status" class="sr-only" role="status" aria-live="polite"></span>
 <section id="ocean-fallback" class="ocean-fallback" aria-labelledby="fallback-title" tabindex="-1" hidden>
 <figure class="fallback-cover"><img src="assets/ocean-cover.jpg" width="1200" height="630" loading="lazy" decoding="async" alt="毛线小鱼游过绒线海草、珊瑚和针织海床的线织海洋场景"><figcaption>线织海洋 · 手作海洋馆</figcaption></figure>
@@ -61,4 +68,4 @@
 <div class="control-bar"><div class="creature-nav"><button id="previous-fish" disabled aria-label="上一只小鱼">←</button><button id="next-fish" disabled aria-label="下一只小鱼">→</button></div><div class="scene-controls" role="group" aria-label="展厅控制"><button id="motion" disabled aria-pressed="true">暂停</button><button id="reset" disabled>回到鱼群 <span aria-hidden="true">↗</span></button></div></div>
 <footer class="bottom"><div class="picker-heading"><div class="picker-heading-copy"><h2>认识海里的朋友</h2><span id="school-count" class="eyebrow">20 条游鱼 · 3 只小蟹</span></div><div class="picker-actions"><span class="picker-hint">点选近看 · 轻点海水喂一口</span><button id="picker-previous" type="button" disabled aria-label="向前浏览鱼群图鉴">←</button><button id="picker-next" type="button" aria-label="向后浏览鱼群图鉴">→</button></div></div><div id="fish-picker" class="fish-picker" role="group" aria-label="鱼群图鉴，左右滑动浏览，点击近看"></div></footer>
 <noscript><p class="fallback-noscript">目前正在浏览静态图鉴。启用 JavaScript 后重新加载，即可尝试互动海洋。</p><style>.stage{height:auto!important;min-height:100svh!important;overflow:visible!important}.stage:after,#viewport,.title-block,.object-info,.control-bar,.bottom,.help,.help-toggle,#feeding-note{display:none!important}.header{position:relative;inset:auto;padding:26px 5%}.ocean-fallback[hidden]{display:block!important}</style></noscript>
-</main><script type="module" src="app.js?v=20261011-experience"></script></body></html>
+</main><script type="module" src="app.js?v=20261014-knit"></script></body></html>

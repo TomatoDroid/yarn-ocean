@@ -3,14 +3,17 @@ name: 验证并部署 GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# 发布共用一个队列且不中断；PR 检查各自排队，新提交会取消同一 PR 的旧检查。
 concurrency:
-  group: github-pages
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'github-pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate:
@@ -31,6 +34,7 @@ jobs:
       - name: 鱼群游动回归测试
         run: npm test
       - name: 上传静态站点
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v4
         with:
           path: dist
@@ -38,6 +42,7 @@ jobs:
   deploy:
     name: 发布 GitHub Pages
     needs: validate
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       pages: write

@@ -40,19 +40,33 @@ function makePortraits(renderer,creatures){
   return urls;
 }
 
+const customLabel={mine:'我织的',guest:'朋友织的'};
+
 export function createFishPicker({definitions,creatures,renderer,onSelect,reduced}){
   const picker=document.querySelector('#fish-picker');
   const portraits=makePortraits(renderer,creatures);
-  const buttons=definitions.map((d,i)=>{
-    const button=document.createElement('button');button.type='button';button.className='fish-card';button.disabled=true;
+  const entries=[];
+  function fillCard(button,fish,portraitUrl,number){
+    const d=fish.userData;
     button.style.setProperty('--fish-accent',d.colors[0]);
-    button.setAttribute('aria-label',`近看${d.name}，${kindName(d)}`);button.setAttribute('aria-pressed','false');
-    const portrait=document.createElement('img');portrait.src=portraits[i];portrait.alt='';portrait.width=256;portrait.height=144;portrait.draggable=false;
-    const number=document.createElement('span');number.className='fish-card-number';number.textContent=String(i+1).padStart(2,'0');number.setAttribute('aria-hidden','true');
+    button.setAttribute('aria-label',`近看${d.name}，${d.custom?customLabel[d.custom]+kindName(d):kindName(d)}`);
+    const portrait=document.createElement('img');portrait.src=portraitUrl;portrait.alt='';portrait.width=256;portrait.height=144;portrait.draggable=false;
+    const label=document.createElement('span');label.className='fish-card-number';label.textContent=number;label.setAttribute('aria-hidden','true');
     const name=document.createElement('span');name.className='fish-card-name';name.textContent=d.name;
-    const kind=document.createElement('span');kind.className='fish-card-kind';kind.textContent=kindName(d);
-    if(d.large)button.classList.add('large-fish');
-    button.append(number,portrait,name,kind);button.addEventListener('click',()=>onSelect(creatures[i]));picker.append(button);return button;
+    const kind=document.createElement('span');kind.className='fish-card-kind';kind.textContent=d.custom?customLabel[d.custom]:kindName(d);
+    button.replaceChildren(label,portrait,name,kind);
+  }
+  function makeButton(entry){
+    const button=document.createElement('button');button.type='button';button.className='fish-card';
+    button.setAttribute('aria-pressed','false');
+    button.addEventListener('click',()=>onSelect(entry.fish));
+    return button;
+  }
+  definitions.forEach((d,i)=>{
+    const entry={fish:creatures[i]};entry.button=makeButton(entry);entry.button.disabled=true;
+    if(d.large)entry.button.classList.add('large-fish');
+    fillCard(entry.button,creatures[i],portraits[i],String(i+1).padStart(2,'0'));
+    picker.append(entry.button);entries.push(entry);
   });
   const previous=document.querySelector('#picker-previous'),next=document.querySelector('#picker-next');
   const updateArrows=()=>{previous.disabled=picker.scrollLeft<2;next.disabled=picker.scrollLeft>=picker.scrollWidth-picker.clientWidth-2;};
@@ -60,6 +74,7 @@ export function createFishPicker({definitions,creatures,renderer,onSelect,reduce
   previous.addEventListener('click',()=>slide(-1));next.addEventListener('click',()=>slide(1));picker.addEventListener('scroll',updateArrows,{passive:true});
   new ResizeObserver(updateArrows).observe(picker);
   picker.addEventListener('keydown',event=>{
+    const buttons=entries.map(e=>e.button);
     const current=buttons.indexOf(document.activeElement);if(current<0)return;
     let index;if(event.key==='ArrowRight')index=(current+1)%buttons.length;else if(event.key==='ArrowLeft')index=(current-1+buttons.length)%buttons.length;else if(event.key==='Home')index=0;else if(event.key==='End')index=buttons.length-1;else return;
     event.preventDefault();buttons[index].focus({preventScroll:true});reveal(buttons[index]);
@@ -69,5 +84,23 @@ export function createFishPicker({definitions,creatures,renderer,onSelect,reduce
     const delta=item.left<rail.left?item.left-rail.left-8:item.right>rail.right?item.right-rail.right+8:0;
     if(delta)picker.scrollBy({left:delta,behavior:reduced.matches?'instant':'smooth'});
   }
-  return {sync(selected){buttons.forEach((b,i)=>b.setAttribute('aria-pressed',String(selected?.userData.index===i)));if(selected)reveal(buttons[selected.userData.index]);updateArrows();}};
+  // Knitted fish sit after the catalogue: a friend's gift first, then your own.
+  const slotOrder=['guest','mine'];
+  function setCustom(slot,fish,{portrait=true}={}){
+    let entry=entries.find(e=>e.slot===slot);
+    if(!fish){if(entry){entry.button.remove();entries.splice(entries.indexOf(entry),1);}updateArrows();return;}
+    if(!entry){
+      entry={slot,fish};entry.button=makeButton(entry);entry.button.classList.add('custom-fish');
+      const after=entries.filter(e=>slotOrder.indexOf(e.slot)>=0&&slotOrder.indexOf(e.slot)<slotOrder.indexOf(slot)).pop()??entries.filter(e=>!e.slot).pop();
+      after.button.after(entry.button);entries.splice(entries.indexOf(after)+1,0,entry);
+    }
+    entry.fish=fish;
+    const url=portrait||!entry.portrait?makePortraits(renderer,[fish])[0]:entry.portrait;entry.portrait=url;
+    fillCard(entry.button,fish,url,slot==='mine'?'我':'赠');
+    updateArrows();
+  }
+  return {
+    setCustom,
+    sync(selected){let active=null;for(const e of entries){const on=e.fish===selected;e.button.setAttribute('aria-pressed',String(on));if(on)active=e.button;}if(active)reveal(active);updateArrows();},
+  };
 }

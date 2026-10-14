@@ -1,8 +1,10 @@
 import * as THREE from 'three';
-import {showSceneFallback,hideSceneFallback} from './app.js?v=20261011-experience';
+import {showSceneFallback,hideSceneFallback} from './app.js?v=20261014-knit';
 import {OrbitControls} from './vendor/OrbitControls.js';
-import {createFishPicker} from './fish-picker.js?v=20261009-fish-talk';
-import {createFishSpeech} from './fish-speech.js?v=20261011-experience';
+import {createFishPicker} from './fish-picker.js?v=20261014-knit';
+import {createFishSpeech} from './fish-speech.js?v=20261014-knit';
+import {createKnitPanel} from './fish-knit.js?v=20261014-knit';
+import {designFromHash,designToDefinition,isDesign,cleanName,randomDesign,sameDesign,sameLook,shareUrl} from './fish-design.js?v=20261014-knit';
 import {createFishFeeding} from './fish-feeding.js?v=20261011-experience';
 import {createTapGesture} from './pointer-tap.js?v=20261010-feeding';
 import {createSwimmer,stepSchool,touchSwimmer,toLane} from './swimming.js?v=20261005-surround';
@@ -157,12 +159,12 @@ function buildFish(d,index){
     sideEyes(g,d.rx*.77,.04,d.rz+.025,{size:.163,tint:d.eye});
     tail(g,-d.rx-.04,-.04,d.fin,-.35,.39);
     if(d.name==='橘子扇'){fin(g,[.03,-.04,d.rz+.07],-.23,.17,d.fin,-.4);}
-    mouth(g,d.rx+.09,-.12,.0,d.body[0],.055,.027);
+    mouth(g,d.rx+.09,-.12,.0,d.lip??d.body[0],.055,.027);
   }else{
     sideEyes(g,-d.rx*.79,.075,d.rz*.88,{size:d.large?.205:d.kind==='whale'?.142:.164});
     tail(g,d.rx*.93,-.015,d.tail,d.large?.78:d.kind==='whale'?.48:.40,d.large?.60:.37);
     fin(g,[.08,d.ry-.01,0],d.large?.63:.36,d.large?.44:.25,d.fin,1.2);
-    mouth(g,-d.rx-.075,-.115,0,d.kind==='whale'?'#9e6ab2':'#ed6063',.074,.028);
+    mouth(g,-d.rx-.075,-.115,0,d.lip??(d.kind==='whale'?'#9e6ab2':'#ed6063'),.074,.028);
     if(d.kind==='whale'){
       for(const x of [-.40,.22]){
         const pts=[];for(let i=0;i<=24;i++){const a=-Math.PI*.16+i/24*Math.PI*1.35;pts.push(V(x,Math.cos(a)*d.ry*.95,Math.sin(a)*d.rz*1.05));}
@@ -264,32 +266,37 @@ function orientFish(g,dt,snap=false){
   q.multiply(bankQ).multiply(g.userData.alignment);
   if(snap)g.quaternion.copy(q);else g.quaternion.slerp(q,1-Math.exp(-dt*5));
 }
+function initSwimmer(g,i,pos){
+  const d=g.userData,swim=createSwimmer(pos,i,d.kind,swimSeed);
+  if(d.speed)swim.speed=d.speed*(d.large?1.15:1.20);
+  swim.large=Boolean(d.large);
+  swim.velocity={x:swim.direction*swim.speed,y:0,z:0};
+  swim.clearance=d.large?(layoutNarrow?1.22:1.65):(layoutNarrow?.50:.65);
+  d.swim=swim;
+}
+function fitFish(g){const d=g.userData;g.scale.setScalar(d.scale*(layoutNarrow?(d.large?.69:.72):.88));d.swim.radius=(d.rx+.95)*g.scale.x;}
 function arrange(){
   const narrow=mobile();if(layoutNarrow===narrow)return;
   const oldBounds=swimBounds;layoutNarrow=narrow;
   swimBounds={x:6.25,minY:-2.35,maxY:3.25,minZ:-6.0,maxZ:6.0};
   habitat.resize(narrow);seafloorLife.resize(narrow);
   creatures.forEach((g,i)=>{
-    g.scale.setScalar(definitions[i].scale*(narrow?(definitions[i].large?.69:.72):.88));
-    if(!g.userData.swim){
+    const d=g.userData;
+    if(!d.swim){
       const columns=narrow?4:5,rows=Math.ceil(definitions.length/columns);
       const x=((i%columns+.22+random()*.56)/columns*2-1)*swimBounds.x*.95;
       const y=swimBounds.minY+(.18+(Math.floor(i/columns)+random()*.5)/rows*.75)*(swimBounds.maxY-swimBounds.minY);
       const z=swimBounds.minZ+(.15+random()*.7)*(swimBounds.maxZ-swimBounds.minZ);
-      const pos=definitions[i].large?V(i%2?-swimBounds.x*.36:swimBounds.x*.20,i%2?2.0:.65,i%2?-.8:.85):V(x,y,z);
-      g.userData.swim=createSwimmer(pos,i,g.userData.kind,swimSeed);
-      if(definitions[i].speed)g.userData.swim.speed=definitions[i].speed*(definitions[i].large?1.15:1.20);
-      g.userData.swim.large=Boolean(definitions[i].large);
-      g.userData.swim.velocity={x:g.userData.swim.direction*g.userData.swim.speed,y:0,z:0};
-      g.userData.swim.clearance=definitions[i].large?(narrow?1.22:1.65):(narrow?.50:.65);
+      const pos=d.large?V(i%2?-swimBounds.x*.36:swimBounds.x*.20,i%2?2.0:.65,i%2?-.8:.85):V(x,y,z);
+      initSwimmer(g,i,pos);
     }else{
-      const state=g.userData.swim;
+      const state=d.swim;
       state.position.x*=swimBounds.x/oldBounds.x;
       state.position.y=swimBounds.minY+(state.position.y-oldBounds.minY)/(oldBounds.maxY-oldBounds.minY)*(swimBounds.maxY-swimBounds.minY);
       state.position.z=swimBounds.minZ+(state.position.z-oldBounds.minZ)/(oldBounds.maxZ-oldBounds.minZ)*(swimBounds.maxZ-swimBounds.minZ);state.laneY=state.position.y;state.laneZ=toLane(state,state.position).z;state.anchor=null;
     }
-    g.userData.swim.radius=(g.userData.rx+.95)*g.scale.x;
-    const p=g.userData.swim.position;g.position.set(p.x,p.y,p.z);orientFish(g,0,true);
+    fitFish(g);
+    const p=d.swim.position;g.position.set(p.x,p.y,p.z);orientFish(g,0,true);
   });
 }
 arrange();
@@ -328,15 +335,18 @@ function touchFish(g,point){
 }
 let selected=null,moving=!reduced.matches,tween=null,time=0,motionBlend=0,previous=performance.now(),needsRender=true,running=false,lost=false,inView=true;
 function setView(position,target){if(reduced.matches){camera.position.copy(position);controls.target.copy(target);tween=null;}else tween={position,target};needsRender=true;}
-function syncInfo(){const d=selected?.userData;document.querySelector('#fish-count').textContent=d?`${String(d.index+1).padStart(2,'0')} / ${definitions.length} · ${d.large?'大型游鱼':d.kind==='round'?'圆脸小鱼':d.kind==='fan'?'扇形小鱼':'长身小鱼'}`:`${definitions.length} 种模样 · 一片海`;document.querySelector('#school-count').textContent=`${definitions.length} 条游鱼 · 3 只小蟹`;document.querySelector('#name').textContent=d?d.name:'绒绒浅海';document.querySelector('#description').textContent=d?d.desc:'在珊瑚与海草之间，遇见柔软的海洋居民。';document.querySelector('#swatches').replaceChildren();if(d)for(const color of d.colors){const dot=document.createElement('i');dot.style.background=color;document.querySelector('#swatches').appendChild(dot);}fishPicker.sync(selected);syncFeedButton();}
+function syncInfo(){const d=selected?.userData;document.querySelector('#fish-count').textContent=d?`${String(d.index+1).padStart(2,'0')} / ${creatures.length} · ${d.large?'大型游鱼':d.kind==='round'?'圆脸小鱼':d.kind==='fan'?'扇形小鱼':'长身小鱼'}${d.custom==='mine'?' · 我织的':d.custom==='guest'?' · 朋友织的':''}`:`${definitions.length} 种模样 · 一片海`;document.querySelector('#school-count').textContent=`${creatures.length} 条游鱼 · 3 只小蟹`;document.querySelector('#name').textContent=d?d.name:'绒绒浅海';document.querySelector('#description').textContent=d?d.desc:'在珊瑚与海草之间，遇见柔软的海洋居民。';document.querySelector('#swatches').replaceChildren();if(d)for(const color of d.colors){const dot=document.createElement('i');dot.style.background=color;document.querySelector('#swatches').appendChild(dot);}fishPicker.sync(selected);syncFeedButton();}
 function overview(){
   feeding.clear();
   fishSpeech.clear();
   if(selected){selected.userData.swim.inspect=false;selected.userData.swim.anchor=null;}
   selected=null;feedingNote.textContent='轻点海水喂一口，收下一颗小爱心。';stage.dataset.view='overview';habitat.setDetail(false);root.children.forEach(c=>c.visible=c.userData.swim.mode==='crossing');particles.visible=true;
+  frameOverview();syncInfo();
+}
+function frameOverview(){
   const center=mobile()?V(0,-.15,0):V(0,-.20,0);
   const distance=mobile()?Math.max(14.2,7.3/(2*Math.tan(THREE.MathUtils.degToRad(17))*camera.aspect)):Math.max(14.8,15.2/(2*Math.tan(THREE.MathUtils.degToRad(17))*camera.aspect));
-  setView(center.clone().add(V(.15,1.15,distance)),center);syncInfo();
+  setView(center.clone().add(V(.15,1.15,distance)),center);
 }
 function focusFish(g){
   feeding.clear();
@@ -346,13 +356,18 @@ function focusFish(g){
   if(swim.mode==='waiting'||!g.visible){swim.mode='crossing';swim.position={x:0,y:.7,z:0};swim.laneY=.7;swim.laneZ=0;g.position.set(0,.7,0);}
   swim.inspect=true;swim.anchor={...swim.position};swim.velocity={x:0,y:0,z:0};
   selected=g;feedingNote.textContent='点「喂它一口」，或轻点海水投喂。';stage.dataset.view='detail';habitat.setDetail(true);root.children.forEach(c=>c.visible=c===g);particles.visible=true;
+  frameFish(g);syncInfo();
+}
+// Camera only: resizes and the knitting panel refit the view without resetting
+// speech, feeding or the note, which a fresh selection does.
+function frameFish(g){
   // Track the fish instead of pinning it in place. A generous spherical fit allows it to turn.
   const extent=(g.userData.kind==='round'?1.6:2*g.userData.rx+.6)*g.scale.x;
   const tangent=Math.tan(THREE.MathUtils.degToRad(17));
-  const distance=Math.max(3.6,extent/(2*tangent*Math.min(1,camera.aspect))*(g.userData.large?1.43:1.25));
+  const distance=Math.max(3.6,extent/(2*tangent*Math.min(1,camera.aspect))*(g.userData.large?1.43:1.25))*(stage.dataset.knitting?(mobile()?1.7:1.4):1);
   const target=g.position.clone(),offset=V(.1,.1,distance).applyQuaternion(g.quaternion);
   const position=target.clone().add(offset);position.y=Math.max(-2.6,position.y);
-  setView(position,target);syncInfo();
+  setView(position,target);
 }
 function cycle(dir){const current=selected?creatures.indexOf(selected):(dir>0?-1:0);focusFish(creatures[(current+dir+creatures.length)%creatures.length]);}
 document.querySelector('#previous-fish').onclick=()=>cycle(-1);document.querySelector('#next-fish').onclick=()=>cycle(1);document.querySelector('#reset').onclick=overview;
@@ -432,7 +447,105 @@ renderer.domElement.addEventListener('wheel',()=>tap.reset(),{passive:true});
 window.addEventListener('blur',()=>tap.reset());
 document.addEventListener('visibilitychange',()=>{if(document.hidden)tap.reset();});
 host.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','Escape'].includes(e.key)){e.preventDefault();if(e.key==='Home'||e.key==='Escape')overview();else cycle(e.key==='ArrowRight'?1:-1);}});
-new ResizeObserver(()=>{const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);arrange();if(selected)focusFish(selected);else overview();needsRender=true;}).observe(host);
+let viewSize=`${host.clientWidth}x${host.clientHeight}`;
+new ResizeObserver(()=>{const w=host.clientWidth,h=host.clientHeight;if(!w||!h||`${w}x${h}`===viewSize)return;viewSize=`${w}x${h}`;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);arrange();frameBesidePanel();if(selected)frameFish(selected);else frameOverview();needsRender=true;}).observe(host);
+// Knitted fish: your own (kept in this browser) and one received through a link.
+const MINE_KEY='yarn-ocean:my-fish',customFish={mine:null,guest:null};
+const customLines={
+  mine:['我是刚织好的，线头还暖暖的。','把我的链接发出去，我就游去找朋友。','这些颜色，是你一圈一圈挑出来的。'],
+  guest:['有人一针一线把我织好，送到这片海。','我是顺着一条链接游过来的。','你也织一条鱼，回赠给织我的人吧。'],
+};
+function readMine(){try{const d=JSON.parse(localStorage.getItem(MINE_KEY)||'null');return isDesign(d)?{...d,name:cleanName(d.name)}:null;}catch{return null;}}
+function saveMine(d){try{if(d)localStorage.setItem(MINE_KEY,JSON.stringify(d));else localStorage.removeItem(MINE_KEY);}catch{}}
+function disposeFish(g){
+  g.traverse(o=>{if(o.isMesh||o.isLineSegments){o.geometry.dispose();o.material.dispose();}});
+  g.removeFromParent();creatures.splice(creatures.indexOf(g),1);clickable.splice(clickable.indexOf(g),1);
+}
+function sortCustom(){
+  // Keep the swim order matching the picker: catalogue, a friend's gift, then yours.
+  for(const slot of ['guest','mine']){const g=customFish[slot];if(g){creatures.splice(creatures.indexOf(g),1);creatures.push(g);}}
+  creatures.forEach((g,i)=>g.userData.index=i);
+}
+function placeCustom(slot,design){
+  const old=customFish[slot];
+  if(old&&sameDesign(old.userData.design,design))return old;
+  const d=designToDefinition(design,{origin:slot});
+  if(old&&sameLook(old.userData.design,design)){
+    // A new name needs no new yarn: relabel the existing model in place.
+    Object.assign(old.userData,{name:d.name,desc:d.desc,design:d.design});
+    fishPicker.setCustom(slot,old,{portrait:false});if(selected===old)syncInfo();return old;
+  }
+  if(old){feeding.clear();fishSpeech.clear();}
+  const g=buildFish(d,creatures.length);g.userData.lines=customLines[slot];addSwimmingSkin(g);
+  if(old){
+    // Reknitting keeps the fish where it is, only at its new shape's cruising speed.
+    const swim=old.userData.swim;swim.speed=createSwimmer(swim.position,0,d.kind).speed;
+    g.userData.swim=swim;g.position.copy(old.position);
+    if(selected===old)selected=g;
+    disposeFish(old);
+  }else{
+    initSwimmer(g,creatures.length,V(0,.7,0));
+    // Waiting offscreen, but already facing its cruising direction so a close-up starts side-on.
+    Object.assign(g.userData.swim,{mode:'waiting',wait:.4});
+  }
+  customFish[slot]=g;sortCustom();fitFish(g);orientFish(g,0,true);
+  g.visible=selected?g===selected:g.userData.swim.mode==='crossing';
+  fishPicker.setCustom(slot,g);
+  if(selected===g)focusFish(g);else syncInfo();
+  needsRender=true;
+  return g;
+}
+function removeCustom(slot){
+  const g=customFish[slot];if(!g)return;
+  if(selected===g)overview();
+  feeding.clear();fishSpeech.clear();
+  disposeFish(g);customFish[slot]=null;sortCustom();
+  fishPicker.setCustom(slot,null);syncInfo();needsRender=true;
+}
+function receiveFromHash(){
+  const design=designFromHash(location.hash);if(!design)return false;
+  const mine=customFish.mine;
+  // Opening your own link simply visits your fish.
+  if(mine&&sameDesign(mine.userData.design,design)){focusFish(mine);return true;}
+  const g=placeCustom('guest',design);focusFish(g);
+  fishSpeech.show(g,`你好！我是${g.userData.name}，有人一针一线把我织好，送到这片海。`);
+  feedingNote.textContent=`朋友织的「${g.userData.name}」游来了。点右上角「织一条鱼」，也织一条送回去。`;
+  return true;
+}
+const knit=createKnitPanel({
+  stage,
+  onOpen(){
+    let g=customFish.mine;
+    if(!g)g=placeCustom('mine',readMine()??randomDesign(Math.random));
+    frameBesidePanel();focusFish(g);
+    feedingNote.textContent='挑好体型和颜色，鱼会马上换上新毛线。';
+    return {...g.userData.design};
+  },
+  onChange(design){
+    const g=placeCustom('mine',design);saveMine(g.userData.design);
+    if(selected!==g)focusFish(g);
+  },
+  onClose(){frameBesidePanel();if(selected)frameFish(selected);},
+  onRemove(){removeCustom('mine');saveMine(null);feedingNote.textContent='线已经拆好收起来了，随时可以再织一条。';},
+  getShareUrl(design){saveMine(design);return shareUrl(location.href,design);},
+});
+// While knitting, shift the projection so the fish sits in the uncovered part
+// of the view. Raycasts and speech bubbles use the same matrix, so taps still line up.
+const knitPanel=document.querySelector('#knit');
+function frameBesidePanel(){
+  const w=host.clientWidth,h=host.clientHeight;
+  if(knitPanel.hidden||!w||!h){if(camera.view?.enabled)camera.clearViewOffset();needsRender=true;return;}
+  const panel=knitPanel.getBoundingClientRect(),view=host.getBoundingClientRect();
+  if(mobile()){
+    // Centre between the header and the sheet that rises from the bottom.
+    const top=Math.max(0,document.querySelector('.header').getBoundingClientRect().bottom-view.top),bottom=Math.min(h,panel.top-view.top);
+    camera.setViewOffset(w,h,0,Math.max(0,h/2-(top+bottom)/2),w,h);
+  }
+  else camera.setViewOffset(w,h,-Math.max(0,panel.right-view.left)/2,0,w,h);
+  needsRender=true;
+}
+new ResizeObserver(()=>{if(!knitPanel.hidden)frameBesidePanel();}).observe(knitPanel);
+window.addEventListener('hashchange',receiveFromHash);
 let diagnosticAt=0;
 function animate(now){
   // A newly started RAF loop can receive a timestamp older than performance.now().
@@ -479,7 +592,7 @@ function updateLoop(){const active=inView&&!document.hidden&&!lost;if(active!==r
 new IntersectionObserver(entries=>{inView=entries[0].isIntersecting;updateLoop();}).observe(stage);document.addEventListener('visibilitychange',updateLoop);
 renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();tap.reset();feeding.clear();lost=true;syncFeedButton();updateLoop();fail('Graphics context lost');});
 renderer.domElement.addEventListener('webglcontextrestored',()=>{lost=false;hideSceneFallback();syncFeedButton();needsRender=true;updateLoop();});
-overview();if(tween){camera.position.copy(tween.position);controls.target.copy(tween.target);tween=null;}controls.update();renderer.render(scene,camera);document.querySelector('#loading')?.remove();document.querySelectorAll('.scene-controls button,.creature-nav button,.fish-picker button').forEach(b=>b.disabled=false);stage.dataset.ready='true';feedButton.disabled=false;hideSceneFallback();syncFeedButton();updateLoop();
+overview();{const mine=readMine();if(mine)placeCustom('mine',mine);}receiveFromHash();if(tween){camera.position.copy(tween.position);controls.target.copy(tween.target);tween=null;}controls.update();renderer.render(scene,camera);document.querySelector('#loading')?.remove();document.querySelectorAll('.scene-controls button,.creature-nav button,.fish-picker button').forEach(b=>b.disabled=false);stage.dataset.ready='true';feedButton.disabled=false;knit.enable();hideSceneFallback();syncFeedButton();updateLoop();
 window.addEventListener('pagehide',e=>{if(!e.persisted)feeding.dispose();});
-if(location.hostname==='localhost'||location.hostname==='127.0.0.1')window.__ocean={renderer,scene,camera,creatures,controls,feeding,getState:()=>({selected:selected?.userData.name,moving,running,feeding:feeding.getState(),drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles})};
+if(location.hostname==='localhost'||location.hostname==='127.0.0.1')window.__ocean={renderer,scene,camera,creatures,controls,feeding,customFish,getState:()=>({selected:selected?.userData.name,moving,running,feeding:feeding.getState(),drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles})};
 }catch(error){fail(error);}
