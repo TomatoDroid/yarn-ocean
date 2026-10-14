@@ -4,7 +4,7 @@ import {YARNS, KINDS, PARTS, cleanName, randomDesign} from './fish-design.js?v=2
 // 3D fish, so every change goes through onChange and is rebuilt there.
 const REBUILD_DELAY_MS = 90;
 
-export function createKnitPanel({stage, onOpen, onClose, onChange, onRemove, getShareUrl}) {
+export function createKnitPanel({stage, onOpen, onClose, onChange, onRemove, getShareUrl, onPostcard}) {
   const panel = document.querySelector('#knit');
   const toggle = document.querySelector('#knit-toggle');
   const form = document.querySelector('#knit-form');
@@ -104,6 +104,11 @@ export function createKnitPanel({stage, onOpen, onClose, onChange, onRemove, get
     render();
     resetShare();
     schedule();
+  });
+  // Flush first, so the postcard shows the colours that were just picked.
+  document.querySelector('#knit-postcard').addEventListener('click', () => {
+    flush();
+    onPostcard?.();
   });
   document.querySelector('#knit-remove').addEventListener('click', () => {
     clearTimeout(timer);

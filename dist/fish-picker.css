@@ -46,7 +46,7 @@
 .object-info #name{grid-column:1;grid-row:2}
 .object-info #description{margin-left:0;max-width:none}
 .object-info #swatches{justify-content:flex-start}
-.feed-action{grid-column:2;grid-row:2;pointer-events:auto}
+.feed-action{grid-column:2;grid-row:2;display:flex;flex-direction:column;align-items:stretch;gap:6px;pointer-events:auto}
 #feed-selected{min-width:96px;min-height:44px;padding:10px 14px;border:1px dashed #85785b;border-radius:24px;background:#e9e1c9;color:#173f48;font-size:12px;white-space:nowrap;box-shadow:0 0 0 3px #e9e1c922}
 #feed-selected:hover:not([aria-disabled="true"]){background:#fff0cd}
 #feed-selected[aria-disabled="true"]{opacity:.65;cursor:default}

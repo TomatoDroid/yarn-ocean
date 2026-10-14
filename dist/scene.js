@@ -1,10 +1,11 @@
 import * as THREE from 'three';
-import {showSceneFallback,hideSceneFallback} from './app.js?v=20261014-knit';
+import {showSceneFallback,hideSceneFallback} from './app.js?v=20261014-postcard';
 import {OrbitControls} from './vendor/OrbitControls.js';
 import {createFishPicker} from './fish-picker.js?v=20261014-knit';
 import {createFishSpeech} from './fish-speech.js?v=20261014-knit';
-import {createKnitPanel} from './fish-knit.js?v=20261014-knit';
-import {designFromHash,designToDefinition,isDesign,cleanName,randomDesign,sameDesign,sameLook,shareUrl} from './fish-design.js?v=20261014-knit';
+import {createKnitPanel} from './fish-knit.js?v=20261014-postcard';
+import {KINDS,designFromHash,designToDefinition,isDesign,cleanName,randomDesign,sameDesign,sameLook,shareUrl} from './fish-design.js?v=20261014-knit';
+import {createPostcardDialog} from './fish-postcard.js?v=20261014-postcard';
 import {createFishFeeding} from './fish-feeding.js?v=20261011-experience';
 import {createTapGesture} from './pointer-tap.js?v=20261010-feeding';
 import {createSwimmer,stepSchool,touchSwimmer,toLane} from './swimming.js?v=20261005-surround';
@@ -309,6 +310,7 @@ const particles=new THREE.Points(particleGeometry,particleMaterial);scene.add(pa
 const fishPicker=createFishPicker({definitions,creatures,renderer,onSelect:g=>focusFish(g),reduced});
 const fishSpeech=createFishSpeech({THREE,host,stage,status:document.querySelector('#interaction-status'),reduced});
 const feedingNote=document.querySelector('#feeding-note');
+const postcardButton=document.querySelector('#postcard-selected');
 const feedButton=document.querySelector('#feed-selected'),feedState=document.querySelector('#feed-state');
 let feedButtonState='';
 const feeding=createFishFeeding({THREE,scene,woolTexture,onEat:g=>{fishSpeech.show(g,'好喜欢这一口！送你一颗小爱心。');feedingNote.textContent=`${g.userData.name}吃到啦，开心地吐出爱心。`;needsRender=true;}});
@@ -335,7 +337,7 @@ function touchFish(g,point){
 }
 let selected=null,moving=!reduced.matches,tween=null,time=0,motionBlend=0,previous=performance.now(),needsRender=true,running=false,lost=false,inView=true;
 function setView(position,target){if(reduced.matches){camera.position.copy(position);controls.target.copy(target);tween=null;}else tween={position,target};needsRender=true;}
-function syncInfo(){const d=selected?.userData;document.querySelector('#fish-count').textContent=d?`${String(d.index+1).padStart(2,'0')} / ${creatures.length} · ${d.large?'大型游鱼':d.kind==='round'?'圆脸小鱼':d.kind==='fan'?'扇形小鱼':'长身小鱼'}${d.custom==='mine'?' · 我织的':d.custom==='guest'?' · 朋友织的':''}`:`${definitions.length} 种模样 · 一片海`;document.querySelector('#school-count').textContent=`${creatures.length} 条游鱼 · 3 只小蟹`;document.querySelector('#name').textContent=d?d.name:'绒绒浅海';document.querySelector('#description').textContent=d?d.desc:'在珊瑚与海草之间，遇见柔软的海洋居民。';document.querySelector('#swatches').replaceChildren();if(d)for(const color of d.colors){const dot=document.createElement('i');dot.style.background=color;document.querySelector('#swatches').appendChild(dot);}fishPicker.sync(selected);syncFeedButton();}
+function syncInfo(){const d=selected?.userData;document.querySelector('#fish-count').textContent=d?`${String(d.index+1).padStart(2,'0')} / ${creatures.length} · ${d.large?'大型游鱼':d.kind==='round'?'圆脸小鱼':d.kind==='fan'?'扇形小鱼':'长身小鱼'}${d.custom==='mine'?' · 我织的':d.custom==='guest'?' · 朋友织的':''}`:`${definitions.length} 种模样 · 一片海`;document.querySelector('#school-count').textContent=`${creatures.length} 条游鱼 · 3 只小蟹`;document.querySelector('#name').textContent=d?d.name:'绒绒浅海';document.querySelector('#description').textContent=d?d.desc:'在珊瑚与海草之间，遇见柔软的海洋居民。';document.querySelector('#swatches').replaceChildren();if(d)for(const color of d.colors){const dot=document.createElement('i');dot.style.background=color;document.querySelector('#swatches').appendChild(dot);}fishPicker.sync(selected);syncFeedButton();postcardButton.hidden=!d?.custom;}
 function overview(){
   feeding.clear();
   fishSpeech.clear();
@@ -528,7 +530,15 @@ const knit=createKnitPanel({
   onClose(){frameBesidePanel();if(selected)frameFish(selected);},
   onRemove(){removeCustom('mine');saveMine(null);feedingNote.textContent='线已经拆好收起来了，随时可以再织一条。';},
   getShareUrl(design){saveMine(design);return shareUrl(location.href,design);},
+  onPostcard(){if(customFish.mine)openPostcard(customFish.mine);},
 });
+// Postcards are for knitted fish only: yours, or one a friend sent you.
+const postcard=createPostcardDialog({THREE,renderer,scene,cleanName,getViewCamera:()=>camera,getOthers:()=>creatures});
+function openPostcard(g){
+  const d=g.userData,lines=d.lines??customLines[d.custom];
+  postcard.open(g,{kindLabel:`${KINDS[d.kind].label} · ${d.custom==='guest'?'朋友织的':'我织的'}`,line:lines[Math.floor(Math.random()*lines.length)]});
+}
+postcardButton.addEventListener('click',()=>{if(selected?.userData.custom)openPostcard(selected);});
 // While knitting, shift the projection so the fish sits in the uncovered part
 // of the view. Raycasts and speech bubbles use the same matrix, so taps still line up.
 const knitPanel=document.querySelector('#knit');
