@@ -33,7 +33,8 @@
 .knit-swatch:hover i{transform:scale(1.1)}
 .knit-swatch input:checked+i{box-shadow:inset 0 -3px 0 #0000001f,0 0 0 2px #0f3c4e,0 0 0 4px #f4dca6;transform:scale(1.08)}
 .knit-swatch input:focus-visible+i{outline:2px solid #f4cd87;outline-offset:4px}
-.knit-actions{display:grid;grid-template-columns:auto 1fr;gap:8px;margin-top:4px}
+.knit-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.knit-actions .knit-primary{grid-column:1 / -1}
 .knit-actions button{min-height:44px;padding:10px 16px;border-radius:30px;border:1px solid #d5f0e44d;background:#0d425578;font-size:13px}
 .knit-actions .knit-primary{background:#e9e1c9;color:#173f48;border-color:#e9e1c9;font-weight:500}
 .knit-actions button:hover{filter:brightness(1.1)}
