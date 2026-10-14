@@ -58,5 +58,5 @@ export function hideSceneFallback() {
 }
 
 requestAnimationFrame(() => requestAnimationFrame(() => {
-  import('./scene.js?v=20261011-experience').catch(showSceneFallback);
+  import('./scene.js?v=20261014-knit').catch(showSceneFallback);
 }));
