@@ -59,3 +59,11 @@
   .stage[data-knitting] .object-info{display:none}
 }
 @media(max-width:380px){.help-toggle{padding:10px 10px}.knit-toggle span{display:none}}
+
+.knit-reply{margin:0 0 8px;padding:8px 12px;border:1px dashed #f4dca688;border-radius:10px;font-size:12px;line-height:1.6;color:#f4dca6}
+.guest-actions{grid-column:1 / -1;display:flex;gap:14px;margin-top:8px;pointer-events:auto}
+.guest-actions button{padding:4px 0;border:0;background:none;color:#f4dca6;font-size:12px;text-decoration:underline;text-underline-offset:3px}
+.guest-actions #guest-release{color:#bcd3cc}
+.guest-actions button:hover{color:#fff0cd}
+.guest-actions button:focus-visible{outline:2px solid #f4cd87;outline-offset:2px}
+.stage[data-view="overview"] .guest-actions{display:none}

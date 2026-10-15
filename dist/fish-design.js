@@ -86,8 +86,11 @@ export function decodeDesign(code, name) {
   return {kind: kindByCode[match[1]], back, belly, fin, accent, name: cleanName(name)};
 }
 
-export function designToHash(design) {
+// The optional sender's name rides along, so the gift can say who knitted it.
+export function designToHash(design, {from = ''} = {}) {
   const params = new URLSearchParams({knit: encodeDesign(design), name: cleanName(design.name)});
+  const sender = cleanName(from, '');
+  if (sender) params.set('from', sender);
   return '#' + params.toString();
 }
 
@@ -96,10 +99,16 @@ export function designFromHash(hash) {
   return params.has('knit') ? decodeDesign(params.get('knit'), params.get('name')) : null;
 }
 
-export function shareUrl(href, design) {
+export function shareFromHash(hash) {
+  const params = new URLSearchParams(String(hash ?? '').replace(/^#/, ''));
+  const design = params.has('knit') ? decodeDesign(params.get('knit'), params.get('name')) : null;
+  return design ? {design, from: cleanName(params.get('from'), '')} : null;
+}
+
+export function shareUrl(href, design, options) {
   const url = new URL(href);
   url.search = '';
-  url.hash = designToHash(design);
+  url.hash = designToHash(design, options);
   return url.toString();
 }
 
