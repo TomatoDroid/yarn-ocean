@@ -1,15 +1,15 @@
 import * as THREE from 'three';
-import {showSceneFallback,hideSceneFallback} from './app.js?v=20261015-friends';
+import {showSceneFallback,hideSceneFallback} from './app.js?v=20261015-kinds';
 import {OrbitControls} from './vendor/OrbitControls.js';
-import {createFishPicker} from './fish-picker.js?v=20261015-friends';
+import {createFishPicker} from './fish-picker.js?v=20261015-kinds';
 import {createFishSpeech} from './fish-speech.js?v=20261014-knit';
-import {createKnitPanel} from './fish-knit.js?v=20261015-friends';
-import {KINDS,designToDefinition,isDesign,cleanName,randomDesign,sameDesign,sameLook,shareFromHash,shareUrl} from './fish-design.js?v=20261015-friends';
-import {addFriend,parseFriends,removeFriend} from './fish-friends.js?v=20261015-friends';
-import {createPostcardDialog} from './fish-postcard.js?v=20261014-postcard';
+import {createKnitPanel} from './fish-knit.js?v=20261015-kinds';
+import {KINDS,designToDefinition,isDesign,cleanName,randomDesign,sameDesign,sameLook,shareFromHash,shareUrl} from './fish-design.js?v=20261015-kinds';
+import {addFriend,parseFriends,removeFriend} from './fish-friends.js?v=20261015-kinds';
+import {createPostcardDialog} from './fish-postcard.js?v=20261015-kinds';
 import {createFishFeeding} from './fish-feeding.js?v=20261011-experience';
 import {createTapGesture} from './pointer-tap.js?v=20261010-feeding';
-import {createSwimmer,stepSchool,touchSwimmer,toLane} from './swimming.js?v=20261005-surround';
+import {createSwimmer,stepSchool,touchSwimmer,toLane} from './swimming.js?v=20261015-kinds';
 import {createHabitat} from './habitat.js?v=20261005-surround';
 import {createSeafloorLife} from './seafloor-life.js?v=20261005-surround';
 const host=document.querySelector('#viewport'),stage=document.querySelector('#stage');
@@ -124,6 +124,9 @@ function mouth(g,x,y,z,color,w=.19,h=.055,front=false){
   const points=Array.from({length:34},(_,i)=>{const a=i/34*Math.PI*2;return front?V(x+Math.cos(a)*w,y+Math.sin(a)*h,z):V(x,y+Math.sin(a)*h,z+Math.cos(a)*w);});
   strand(g,points,.052,color,{closed:true,fur:.012,density:65});
 }
+const KNIT_SHAPES=new Set(['puffer','angler','eel','ray']);
+const BODY_RINGS={fan:9,round:8,puffer:8,angler:8,eel:5,ray:3};
+const SWIM_MODE={round:1,ray:2,eel:3};
 const definitions=[
  {name:'柠檬潜水员',desc:'绿背、蓝肚皮，顶着一枚柠檬黄的背鳍。',colors:['#159e54','#239eba','#ffe235'],kind:'long',rx:.82,ry:.38,rz:.31,body:['#38a9ca','#1fa880','#18b45c'],fin:'#f8d322',tail:'#efe894',pos:[-1.55,2.40,.2],scale:1.0,angle:-.1},
  {name:'可可泡泡',desc:'方圆的棕色脸，紫色嘟嘴，还有不一样高的眼睛。',colors:['#75412b','#184e35','#9866c5'],kind:'round',rx:.49,ry:.50,rz:.34,body:['#673921','#84432b'],fin:'#15593f',lip:'#9161b7',pos:[1.10,2.55,-.3],scale:1.03,angle:-.25},
@@ -146,11 +149,87 @@ const definitions=[
  {name:'斑点巡游鱼',desc:'宽厚的靛蓝色大鱼，奶白绒点缀满鱼背。它摆动大尾鳍，从小鱼身边缓缓游过。',colors:['#396999','#a8d1cf','#e5e5c9'],kind:'long',large:true,rx:1.65,ry:.72,rz:.65,body:['#b0d3cc','#528db0','#396999'],fin:'#689eb9',tail:'#5489ac',pos:[-4.4,.8,-2.8],scale:1.50,speed:.52,angle:.2},
  {name:'金色领航鱼',desc:'金色与奶油色交织的宽厚鱼身，舒展着大鱼鳍，在鱼群外侧悠然转弯。',colors:['#c49441','#e5ca86','#8da78e'],kind:'long',large:true,rx:1.45,ry:.65,rz:.57,body:['#e4d4a1','#d4b065','#b98a3b'],fin:'#92ac92',tail:'#b3c3a0',pos:[4.1,1.6,-2.4],scale:1.40,speed:.58,angle:-.2}
 ];
+// Knitted-only shapes. Like the long fish, each faces -X so they share its swimming frame.
+function spikes(g,rx,ry,rz,color,count=46){
+  for(let i=0;i<count;i++){
+    // Spread evenly over the ball, leaving the face clear for the eyes and pout.
+    const y=1-(i+.5)/count*2,r=Math.sqrt(1-y*y),a=i*2.39996,n=V(Math.cos(a)*r,y,Math.sin(a)*r);
+    if(n.x<-.5)continue;
+    const base=V(n.x*rx,n.y*ry,n.z*rz),dir=V(n.x/rx,n.y/ry,n.z/rz).normalize();
+    strand(g,[base,base.clone().addScaledVector(dir,.1),base.clone().addScaledVector(dir,.2)],.027,color,{fur:.02,density:90});
+  }
+}
+// A thin two-faced plate that fills in behind a closed outline of yarn loops.
+function slab(g,outline,thick,color){
+  const pos=[0,thick,0,0,-thick,0],uv=[.5,.5,.5,.5],index=[],n=outline.length;
+  for(const p of outline){pos.push(p.x,thick,p.z,p.x,-thick,p.z);uv.push(0,0,0,0);}
+  for(let i=0;i<n;i++){const a=2+i*2,b=2+(i+1)%n*2;index.push(0,b,a,1,a+1,b+1);}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(index);geo.computeVertexNormals();
+  return mesh(g,geo,material(color),V(),V(1,1,1));
+}
+function buildKnitShape(g,d){
+  if(d.kind==='puffer'){
+    spikes(g,d.rx,d.ry,d.rz,d.fin);
+    sideEyes(g,-d.rx*.6,.12,d.rz*.72,{size:.165});
+    tail(g,d.rx*.92,0,d.tail,.30,.30);
+    for(const side of [-1,1])fin(g,[-.08,-.1,side*(d.rz*.92)],.2,.17,d.fin,-.35);
+    // A small round pout, like a puffer about to blow a bubble.
+    mouth(g,-d.rx-.05,-.1,0,d.lip,.075,.07);
+  }else if(d.kind==='angler'){
+    sideEyes(g,-d.rx*.42,d.ry*.5,d.rz*.66,{size:.105});
+    tail(g,d.rx*.9,0,d.tail,.36,.36);
+    fin(g,[.18,d.ry-.04,0],.3,.22,d.fin,1.3);
+    for(const side of [-1,1])fin(g,[-.05,-.16,side*(d.rz*.95)],.22,.2,d.fin,-.45);
+    // A jutting lower jaw with a row of yarn teeth, so the grin reads from the side too.
+    const jx=d.rx*.7,jcx=-d.rx*.42,jz=d.rz*.62,jy=-.17,front=a=>Math.cos(a)<0;
+    const lip=Array.from({length:40},(_,i)=>{const a=i/40*Math.PI*2;return V(jcx+Math.cos(a)*jx*(front(a)?1:.6),jy-(front(a)?0:.05*Math.abs(Math.cos(a))),Math.sin(a)*jz);});
+    strand(g,lip,.05,d.lip,{closed:true,fur:.015,density:70});
+    mesh(g,new THREE.SphereGeometry(1,24,12),material(d.body[0]),V(jcx-jx*.1,jy-.03,0),V(jx*.95,.07,jz*.95));
+    for(let i=0;i<7;i++){const a=Math.PI*(.62+.76*i/6);mesh(g,new THREE.ConeGeometry(.032,.11,8),eyeWhite,V(jcx+Math.cos(a)*jx*.95,jy+.075,Math.sin(a)*jz*.95));}
+    for(let i=0;i<5;i++){const a=Math.PI*(.7+.6*i/4);mesh(g,new THREE.ConeGeometry(.026,.08,8),eyeWhite,V(jcx+Math.cos(a)*jx*.56,jy+.17,Math.sin(a)*jz*.7)).rotation.z=Math.PI;}
+    g.userData.mouthPoint=V(jcx-jx,jy+.06,0);
+    // The lure: a bent stalk from the forehead, ending in a glowing pompom.
+    strand(g,[V(-d.rx*.3,d.ry*.95,0),V(-d.rx*.55,d.ry+.36,0),V(-d.rx-.22,d.ry+.4,0),V(-d.rx-.44,d.ry+.16,0)],.028,d.fin,{fur:.02,density:80});
+    mesh(g,new THREE.SphereGeometry(.105,20,14),new THREE.MeshStandardMaterial({color:d.lip,emissive:d.lip,emissiveIntensity:1.5,roughness:.7}),V(-d.rx-.46,d.ry+.04,0));
+  }else if(d.kind==='eel'){
+    sideEyes(g,-d.rx*.84,.06,d.rz*.78,{size:.095});
+    for(const side of [-1,1])fin(g,[-d.rx*.6,-.06,side*(d.rz+.01)],.16,.13,d.fin,-.4);
+    // A ruffled ribbon fin along the back and the belly, meeting at a pointed tail.
+    const tip=d.rx+.32;
+    for(const side of [1,-1]){
+      const points=[];
+      for(let i=0;i<=26;i++){
+        const x=-d.rx*.5+i/26*(tip+d.rx*.5),edge=Math.sqrt(Math.max(0,1-(Math.min(x,d.rx)/d.rx)**2));
+        const reach=x<d.rx?d.ry*edge+.06*(1-Math.max(0,x/d.rx)**4):0;
+        points.push(V(x,side*(reach+(i%2?.028:0)*(x<d.rx?1:0)),0));
+      }
+      strand(g,points,.034,d.fin,{fur:.025,density:110});
+    }
+    mouth(g,-d.rx-.05,-.04,0,d.lip,.06,.03);
+  }else if(d.kind==='ray'){
+    // Eyes sit on top of the flat disc; a fringe outlines the wings.
+    for(const side of [-1,1]){
+      mesh(g,new THREE.SphereGeometry(.085,20,14),eyeWhite,V(-d.rx*.42,d.ry+.02,side*.17));
+      mesh(g,new THREE.SphereGeometry(.048,16,10),pupil,V(-d.rx*.46,d.ry+.075,side*.17),V(1,.45,1));
+    }
+    // Diamond wings: nested yarn loops reaching out to pointed tips beyond the disc.
+    const W=d.rz+.45,outline=[[-d.rx-.03,0],[-d.rx*.6,.6],[.08,1],[.4,.52],[d.rx*.82,0]];
+    [d.fin,d.body[0],d.fin,d.body[0]].forEach((color,i)=>{
+      const k=1-i*.09,pts=[];
+      for(const side of [1,-1])for(const [x,z] of side>0?outline:outline.slice(1,-1).reverse())pts.push(V(x*k,Math.sin(x*4+i)*.012,side*z*W*k));
+      strand(g,pts,.046-i*.003,color,{closed:true,fur:.03,density:140});
+      if(i===0)slab(g,new THREE.CatmullRomCurve3(pts,true,'centripetal').getPoints(56),.022,d.body[0]);
+    });
+    strand(g,[V(d.rx*.8,0,0),V(d.rx+.4,.03,.04),V(d.rx+.85,-.03,-.05),V(d.rx+1.18,.04,0)],.03,d.tail,{fur:.03,density:110});
+    mouth(g,-d.rx-.03,-.015,0,d.lip,.08,.022);
+  }
+}
 function buildFish(d,index){
   const g=new THREE.Group();g.userData={...d,index,fur:[],furColors:[],phase:random()*6.28};
   root.add(g);creatures.push(g);clickable.push(g);
-  body(g,d.rx,d.ry,d.rz,d.body,d.large?10:d.kind==='fan'?9:d.kind==='round'?8:7);
-  if(d.kind==='round'){
+  body(g,d.rx,d.ry,d.rz,d.body,d.large?10:BODY_RINGS[d.kind]??7);
+  if(KNIT_SHAPES.has(d.kind))buildKnitShape(g,d);
+  else if(d.kind==='round'){
     frontEyes(g,'#fffbed',d.rx*.55,.11,.173,d.rz*.92);
     fin(g,[-d.rx+.025,.015,.01],-.32,.34,d.fin,-.2);
     fin(g,[d.rx-.01,-.03,.02],.32,.32,d.fin,.2);
@@ -200,7 +279,7 @@ const swimShader=`
 uniform float uBeat;
 uniform float uPower;
 uniform float uRadius;
-uniform float uRound;
+uniform float uMode;
 uniform float uTailSign;
 uniform float uTouch;
 uniform float uJoy;
@@ -208,7 +287,16 @@ vec3 swimDeform(vec3 p){
   p.y*=1.0+sin(uBeat*1.3)*.045*uJoy;
   p.z*=1.0+cos(uBeat*1.3)*.035*uJoy;
   p.y*=1.0-.055*uTouch; p.z*=1.0+.035*uTouch;
-  if(uRound>.5){
+  if(uMode>2.5){
+    // Eel: the whole body undulates, growing toward the tail.
+    float rear=smoothstep(-uRadius*1.1,uRadius*1.25,p.x);
+    p.z+=sin(uBeat-p.x*3.2)*(.035+.17*rear)*uPower;
+  }else if(uMode>1.5){
+    // Ray: the wings flap in a wave from nose to tail, and the whip trails.
+    float wing=smoothstep(uRadius*.22,uRadius*1.05,abs(p.z))*(1.0+max(0.0,abs(p.z)-uRadius)*1.4);
+    p.y+=sin(uBeat*.8-p.x*1.6)*wing*wing*.32*uPower;
+    p.z+=sin(uBeat-p.x*3.0)*smoothstep(.35,1.7,p.x)*.14*uPower;
+  }else if(uMode>.5){
     float fin=smoothstep(uRadius*.76,uRadius*1.52,abs(p.x));
     float stroke=sin(uBeat+p.x*2.2);
     p.z+=stroke*fin*.20*uPower;
@@ -224,7 +312,7 @@ vec3 swimDeform(vec3 p){
 }`;
 function addSwimmingSkin(g){
   const d=g.userData;
-  d.uniforms={uBeat:{value:d.phase},uPower:{value:0},uRadius:{value:d.rx},uRound:{value:d.kind==='round'?1:0},uTailSign:{value:d.kind==='fan'?-1:1},uTouch:{value:0},uJoy:{value:0}};
+  d.uniforms={uBeat:{value:d.phase},uPower:{value:0},uRadius:{value:d.kind==='ray'?d.rz:d.rx},uMode:{value:SWIM_MODE[d.kind]??0},uTailSign:{value:d.kind==='fan'?-1:1},uTouch:{value:0},uJoy:{value:0}};
   g.traverse(o=>{
     if(!o.isMesh&&!o.isLineSegments)return;
     o.material=o.material.clone();
@@ -241,7 +329,7 @@ function addSwimmingSkin(g){
         objectNormal=normalize(cross(swimDeform(position+t1*.002)-p0,swimDeform(position+t2*.002)-p0));
       `);
     };
-    o.material.customProgramCacheKey=()=>o.isMesh?'swim-mesh-v1':'swim-fur-v1';
+    o.material.customProgramCacheKey=()=>o.isMesh?'swim-mesh-v2':'swim-fur-v2';
     o.geometry.computeBoundingSphere();o.geometry.boundingSphere.radius+=.3;
   });
   // Map each model's nose into a shared +Z-forward swimming frame.
@@ -338,7 +426,7 @@ function touchFish(g,point){
 }
 let selected=null,moving=!reduced.matches,tween=null,time=0,motionBlend=0,previous=performance.now(),needsRender=true,running=false,lost=false,inView=true;
 function setView(position,target){if(reduced.matches){camera.position.copy(position);controls.target.copy(target);tween=null;}else tween={position,target};needsRender=true;}
-function syncInfo(){const d=selected?.userData;document.querySelector('#fish-count').textContent=d?`${String(d.index+1).padStart(2,'0')} / ${creatures.length} · ${d.large?'大型游鱼':d.kind==='round'?'圆脸小鱼':d.kind==='fan'?'扇形小鱼':'长身小鱼'}${d.custom?' · '+knitter(d):''}`:`${definitions.length} 种模样 · 一片海`;document.querySelector('#school-count').textContent=`${creatures.length} 条游鱼 · 3 只小蟹`;document.querySelector('#name').textContent=d?d.name:'绒绒浅海';document.querySelector('#description').textContent=d?d.desc:'在珊瑚与海草之间，遇见柔软的海洋居民。';document.querySelector('#swatches').replaceChildren();if(d)for(const color of d.colors){const dot=document.createElement('i');dot.style.background=color;document.querySelector('#swatches').appendChild(dot);}fishPicker.sync(selected);syncFeedButton();postcardButton.hidden=!d?.custom;guestActions.hidden=d?.custom!=='guest';}
+function syncInfo(){const d=selected?.userData;document.querySelector('#fish-count').textContent=d?`${String(d.index+1).padStart(2,'0')} / ${creatures.length} · ${d.kindLabel??(d.large?'大型游鱼':d.kind==='round'?'圆脸小鱼':d.kind==='fan'?'扇形小鱼':'长身小鱼')}${d.custom?' · '+knitter(d):''}`:`${definitions.length} 种模样 · 一片海`;document.querySelector('#school-count').textContent=`${creatures.length} 条游鱼 · 3 只小蟹`;document.querySelector('#name').textContent=d?d.name:'绒绒浅海';document.querySelector('#description').textContent=d?d.desc:'在珊瑚与海草之间，遇见柔软的海洋居民。';document.querySelector('#swatches').replaceChildren();if(d)for(const color of d.colors){const dot=document.createElement('i');dot.style.background=color;document.querySelector('#swatches').appendChild(dot);}fishPicker.sync(selected);syncFeedButton();postcardButton.hidden=!d?.custom;guestActions.hidden=d?.custom!=='guest';}
 function overview(){
   feeding.clear();
   fishSpeech.clear();
@@ -365,10 +453,11 @@ function focusFish(g){
 // speech, feeding or the note, which a fresh selection does.
 function frameFish(g){
   // Track the fish instead of pinning it in place. A generous spherical fit allows it to turn.
-  const extent=(g.userData.kind==='round'?1.6:2*g.userData.rx+.6)*g.scale.x;
+  const extent=(g.userData.span??(g.userData.kind==='round'?1.6:2*g.userData.rx+.6))*g.scale.x;
   const tangent=Math.tan(THREE.MathUtils.degToRad(17));
   const distance=Math.max(3.6,extent/(2*tangent*Math.min(1,camera.aspect))*(g.userData.large?1.43:1.25))*(stage.dataset.knitting?(mobile()?1.7:1.4):1);
-  const target=g.position.clone(),offset=V(.1,.1,distance).applyQuaternion(g.quaternion);
+  // A ray is a thin line from the side, so look down onto its back instead.
+  const target=g.position.clone(),offset=(g.userData.kind==='ray'?V(.1,.5*distance,.87*distance):V(.1,.1,distance)).applyQuaternion(g.quaternion);
   const position=target.clone().add(offset);position.y=Math.max(-2.6,position.y);
   setView(position,target);
 }

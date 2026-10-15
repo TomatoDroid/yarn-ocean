@@ -4,8 +4,10 @@ export const toLane=(s,p)=>({x:p.x*s.heading.x+p.z*s.heading.z,y:p.y,z:-p.x*s.he
 export const fromLane=(s,p)=>({x:p.x*s.heading.x-p.z*s.heading.z,y:p.y,z:p.x*s.heading.z+p.z*s.heading.x});
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const random=s=>{s.seed=(Math.imul(s.seed,1664525)+1013904223)>>>0;return s.seed/4294967296;};
+// Cruising speeds by body: round and spiky shapes potter, long ones glide.
+const KIND_SPEED={round:.60,fan:.73,puffer:.50,angler:.62,ray:.72,eel:.84};
 export function createSwimmer(position,index,kind,seed=37){
-  const s={heading:{x:1,z:0},passEdges:null,position:{...position},velocity:{x:0,y:0,z:0},seed:(seed^Math.imul(index+1,0x9e3779b9))>>>0,phase:0,speed:kind==='round'?.60:kind==='fan'?.73:.94,beat:index*1.73,power:0,distance:0,clearance:.6,radius:1.2,large:false,direction:index%2?1:-1,mode:'crossing',wait:0,passes:0,entries:0,exits:0,reaction:0,touches:0,canRecycle:false,inspect:false,anchor:null,laneY:position.y,laneZ:position.z};
+  const s={heading:{x:1,z:0},passEdges:null,position:{...position},velocity:{x:0,y:0,z:0},seed:(seed^Math.imul(index+1,0x9e3779b9))>>>0,phase:0,speed:KIND_SPEED[kind]??.94,beat:index*1.73,power:0,distance:0,clearance:.6,radius:1.2,large:false,direction:index%2?1:-1,mode:'crossing',wait:0,passes:0,entries:0,exits:0,reaction:0,touches:0,canRecycle:false,inspect:false,anchor:null,laneY:position.y,laneZ:position.z};
   s.seed=Math.imul(s.seed^(s.seed>>>16),0x85ebca6b)>>>0;s.seed^=s.seed>>>13;
   s.phase=random(s)*Math.PI*2;s.pace=.86+random(s)*.30;s.velocity.x=s.direction*s.speed*s.pace;return s;
 }

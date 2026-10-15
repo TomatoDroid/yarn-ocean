@@ -1,4 +1,4 @@
-import {isDesign, cleanName, sameDesign} from './fish-design.js?v=20261015-friends';
+import {isDesign, cleanName, sameDesign} from './fish-design.js?v=20261015-kinds';
 
 // Fish received through links stay in this browser. A small, ordered list:
 // the oldest gift swims off when a new one arrives and the sea is full.

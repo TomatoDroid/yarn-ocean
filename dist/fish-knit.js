@@ -1,4 +1,4 @@
-import {YARNS, KINDS, PARTS, cleanName, randomDesign} from './fish-design.js?v=20261015-friends';
+import {YARNS, KINDS, PARTS, cleanName, randomDesign} from './fish-design.js?v=20261015-kinds';
 
 // The knitting panel only edits a plain design object. The scene owns the
 // 3D fish, so every change goes through onChange and is rebuilt there.
@@ -19,12 +19,13 @@ export function createKnitPanel({stage, onOpen, onClose, onChange, onRemove, get
   const help = document.querySelector('#help'), helpToggle = document.querySelector('#help-toggle');
   let design = null, timer = 0, composing = false, replyTo = '';
 
-  for (const [kind, {label}] of Object.entries(KINDS)) {
+  for (const [kind, {label, short}] of Object.entries(KINDS)) {
     const option = document.createElement('label');
     option.className = 'knit-segment';
     const input = Object.assign(document.createElement('input'), {type: 'radio', name: 'kind', value: kind});
     const text = document.createElement('span');
-    text.textContent = label.replace('小鱼', '');
+    text.textContent = short;
+    option.title = label;
     option.append(input, text);
     kinds.append(option);
   }

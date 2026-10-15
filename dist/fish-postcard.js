@@ -44,9 +44,11 @@ export function photographFish({THREE, renderer, scene, viewCamera, fish, others
   const box = new THREE.Box3().setFromObject(fish);
   const center = box.getCenter(new THREE.Vector3()), extent = box.getSize(new THREE.Vector3());
   const radius = Math.max(extent.x, extent.y, extent.z) * .5;
-  // Round fish face the camera; long and fan fish are shown side-on, like the close-up.
-  const facing = new THREE.Vector3(.18, .16, 1).applyQuaternion(fish.quaternion).normalize();
-  const distance = radius / Math.tan(THREE.MathUtils.degToRad(15)) * 1.32;
+  // Fish are shown side-on, like the close-up; a ray is seen from above, wings spread.
+  // Its flapping wings rise past the resting bounds, so it gets a little more room.
+  const ray = fish.userData.kind === 'ray';
+  const facing = (ray ? new THREE.Vector3(.1, .5, .87) : new THREE.Vector3(.18, .16, 1)).applyQuaternion(fish.quaternion).normalize();
+  const distance = radius / Math.tan(THREE.MathUtils.degToRad(15)) * (ray ? 1.6 : 1.32);
   lens.position.copy(center).addScaledVector(facing, distance);
   lens.lookAt(center.clone().add(new THREE.Vector3(0, -radius * .08, 0)));
   lens.updateMatrixWorld();
