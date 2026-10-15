@@ -19,7 +19,7 @@
 .knit-field input{width:100%;min-height:42px;padding:9px 13px;border:1px solid #d0e4d34d;border-radius:11px;background:#0a2f40b3;color:#f4f1e6;font:inherit;font-size:15px}
 .knit-field input::placeholder{color:#9bbcb4}
 .knit-field input:focus{outline:2px solid #f4cd87;outline-offset:1px}
-.knit-segments{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.knit-segments{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .knit-segment{position:relative}
 .knit-segment input,.knit-swatch input{position:absolute;inset:0;margin:0;opacity:0;cursor:pointer}
 .knit-segment span{display:flex;align-items:center;justify-content:center;min-height:40px;border:1px solid #d0e4d33d;border-radius:11px;background:#164756c9;font-size:13px;transition:background .15s,border-color .15s}

@@ -78,3 +78,23 @@ test('a design becomes a scene definition with the chosen yarns in place', () =>
   assert.ok(sameLook(d.design, {...design, name: '别的名字'}));
   assert.ok(!sameLook(d.design, {...design, accent: 3}));
 });
+
+test('kind codes are part of the link format: unique, stable, and old links still open', () => {
+  const codes = Object.fromEntries(Object.entries(KINDS).map(([kind, k]) => [kind, k.code]));
+  assert.deepEqual(codes, {long: 'l', round: 'r', fan: 'f', puffer: 'p', angler: 'a', eel: 'e', ray: 'y'});
+  assert.equal(new Set(Object.values(codes)).size, Object.keys(codes).length);
+  assert.equal(decodeDesign('1l0123', '旧鱼').kind, 'long');
+  assert.deepEqual(designFromHash('#knit=1yf0a3&name=%E9%A3%9E%E6%AF%AF'), {kind: 'ray', back: 15, belly: 0, fin: 10, accent: 3, name: '飞毯'});
+  for (const code of ['1w1234', '1Y1234', '1pp123']) assert.equal(decodeDesign(code, 'x'), null, code);
+});
+
+test('the new knitted shapes carry their own label, framing and description', () => {
+  for (const kind of ['puffer', 'angler', 'eel', 'ray']) {
+    const d = designToDefinition({...design, kind});
+    assert.equal(d.kindLabel, KINDS[kind].label);
+    assert.ok(d.span > 0, kind);
+    assert.match(d.desc, new RegExp(`的${KINDS[kind].fins}，`));
+  }
+  assert.match(designToDefinition({...design, kind: 'angler'}).desc, /嘴巴和小灯是/);
+  assert.match(designToDefinition({...design, kind: 'eel'}).desc, /嘴巴是/);
+});

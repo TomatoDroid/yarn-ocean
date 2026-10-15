@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-const kindName=d=>d.large?'大型游鱼':d.kind==='round'?'圆脸小鱼':d.kind==='fan'?'扇形小鱼':d.kind==='whale'?'小鲸模样':'长身小鱼';
+const kindName=d=>d.kindLabel??(d.large?'大型游鱼':d.kind==='round'?'圆脸小鱼':d.kind==='fan'?'扇形小鱼':d.kind==='whale'?'小鲸模样':'长身小鱼');
 
 // Render the actual yarn geometry once per portrait, sharing the ocean's GPU
 // context and materials. Cards never run an extra animation or WebGL context.
@@ -23,7 +23,8 @@ function makePortraits(renderer,creatures){
     for(const fish of creatures){
       const model=new THREE.Group();
       for(const part of fish.children)model.add(part.clone());
-      model.rotation.set(.06,fish.userData.kind==='round'?-.18:.25,-.04);
+      // Rays are tilted to show their back; from the side they are only a thin line.
+      if(fish.userData.kind==='ray')model.rotation.set(.8,0,-.1);else model.rotation.set(.06,fish.userData.kind==='round'?-.18:.25,-.04);
       portraitScene.add(model);
       const box=new THREE.Box3().setFromObject(model),center=box.getCenter(new THREE.Vector3()),size=box.getSize(new THREE.Vector3());
       const halfHeight=Math.max(size.y,size.x/(width/height))*0.61;

@@ -20,10 +20,16 @@ export const YARNS = Object.freeze([
   {name: '炭黑', hex: '#242520'},
 ]);
 
+// short: the knit panel's button; fins: how the fin colour reads in a description;
+// span: the model's longest extent, for framing close-ups.
 export const KINDS = Object.freeze({
-  long: {label: '长身小鱼', code: 'l', rx: .78, ry: .31, rz: .25, scale: .94},
-  round: {label: '圆脸小鱼', code: 'r', rx: .46, ry: .46, rz: .33, scale: .92},
-  fan: {label: '扇形小鱼', code: 'f', rx: .44, ry: .56, rz: .18, scale: .98},
+  long: {label: '长身小鱼', short: '长身', code: 'l', rx: .78, ry: .31, rz: .25, scale: .94, fins: '鳍尾'},
+  round: {label: '圆脸小鱼', short: '圆脸', code: 'r', rx: .46, ry: .46, rz: .33, scale: .92, fins: '小短鳍'},
+  fan: {label: '扇形小鱼', short: '扇形', code: 'f', rx: .44, ry: .56, rz: .18, scale: .98, fins: '鳍尾'},
+  puffer: {label: '河豚刺球', short: '河豚', code: 'p', rx: .5, ry: .47, rz: .45, scale: .9, fins: '刺和小鳍', span: 1.75},
+  angler: {label: '灯笼鮟鱇', short: '鮟鱇', code: 'a', rx: .62, ry: .48, rz: .42, scale: .9, fins: '鳍和灯杆', span: 2.2},
+  eel: {label: '长鳗', short: '长鳗', code: 'e', rx: 1.2, ry: .2, rz: .19, scale: .88, fins: '波浪长鳍', span: 3.1},
+  ray: {label: '鳐鱼', short: '鳐鱼', code: 'y', rx: .52, ry: .11, rz: .6, scale: .95, fins: '翅边和长尾', span: 3.2},
 });
 
 export const PARTS = Object.freeze([
@@ -37,6 +43,7 @@ export const NAME_LIMIT = 8;
 export const DEFAULT_NAME = '我的毛线鱼';
 const VERSION = '1';
 const kindByCode = Object.fromEntries(Object.entries(KINDS).map(([kind, {code}]) => [code, kind]));
+const CODE = new RegExp(`^${VERSION}([${Object.keys(kindByCode).join('')}])([0-9a-f]{4})$`);
 
 // Drop control and bidi-override characters, collapse spaces, cap by code point.
 export function cleanName(value, fallback = DEFAULT_NAME) {
@@ -80,7 +87,7 @@ export function encodeDesign(design) {
 }
 
 export function decodeDesign(code, name) {
-  const match = /^1([lrf])([0-9a-f]{4})$/.exec(String(code ?? ''));
+  const match = CODE.exec(String(code ?? ''));
   if (!match) return null;
   const [back, belly, fin, accent] = Array.from(match[2], digit => Number.parseInt(digit, 16));
   return {kind: kindByCode[match[1]], back, belly, fin, accent, name: cleanName(name)};
@@ -114,8 +121,8 @@ export function shareUrl(href, design, options) {
 
 export function describeDesign(design) {
   const yarn = key => YARNS[design[key]].name;
-  const tail = design.kind === 'round' ? '小短鳍' : '鳍尾';
-  return `${yarn('back')}的背、${yarn('belly')}的肚皮，摆着${yarn('fin')}的${tail}，嘴巴是${yarn('accent')}。`;
+  const mouth = design.kind === 'angler' ? '嘴巴和小灯' : '嘴巴';
+  return `${yarn('back')}的背、${yarn('belly')}的肚皮，摆着${yarn('fin')}的${KINDS[design.kind].fins}，${mouth}是${yarn('accent')}。`;
 }
 
 // Map a design onto the same definition shape the hand-tuned fish use.
@@ -127,6 +134,8 @@ export function designToDefinition(design, {origin = 'mine'} = {}) {
     desc: describeDesign(design),
     colors: [back, belly, fin, accent],
     kind: design.kind,
+    kindLabel: kind.label,
+    span: kind.span,
     rx: kind.rx, ry: kind.ry, rz: kind.rz,
     body: [belly, back, back],
     fin, tail: fin, lip: accent,

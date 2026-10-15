@@ -58,5 +58,5 @@ export function hideSceneFallback() {
 }
 
 requestAnimationFrame(() => requestAnimationFrame(() => {
-  import('./scene.js?v=20261015-friends').catch(showSceneFallback);
+  import('./scene.js?v=20261015-kinds').catch(showSceneFallback);
 }));
