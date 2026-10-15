@@ -40,7 +40,7 @@ function makePortraits(renderer,creatures){
   return urls;
 }
 
-const customLabel={mine:'我织的',guest:'朋友织的'};
+const customLabel=d=>d.custom==='mine'?'我织的':d.from?`${d.from}织的`:'朋友织的';
 
 export function createFishPicker({definitions,creatures,renderer,onSelect,reduced}){
   const picker=document.querySelector('#fish-picker');
@@ -49,11 +49,11 @@ export function createFishPicker({definitions,creatures,renderer,onSelect,reduce
   function fillCard(button,fish,portraitUrl,number){
     const d=fish.userData;
     button.style.setProperty('--fish-accent',d.colors[0]);
-    button.setAttribute('aria-label',`近看${d.name}，${d.custom?customLabel[d.custom]+kindName(d):kindName(d)}`);
+    button.setAttribute('aria-label',`近看${d.name}，${d.custom?customLabel(d)+kindName(d):kindName(d)}`);
     const portrait=document.createElement('img');portrait.src=portraitUrl;portrait.alt='';portrait.width=256;portrait.height=144;portrait.draggable=false;
     const label=document.createElement('span');label.className='fish-card-number';label.textContent=number;label.setAttribute('aria-hidden','true');
     const name=document.createElement('span');name.className='fish-card-name';name.textContent=d.name;
-    const kind=document.createElement('span');kind.className='fish-card-kind';kind.textContent=d.custom?customLabel[d.custom]:kindName(d);
+    const kind=document.createElement('span');kind.className='fish-card-kind';kind.textContent=d.custom?customLabel(d):kindName(d);
     button.replaceChildren(label,portrait,name,kind);
   }
   function makeButton(entry){
@@ -84,14 +84,14 @@ export function createFishPicker({definitions,creatures,renderer,onSelect,reduce
     const delta=item.left<rail.left?item.left-rail.left-8:item.right>rail.right?item.right-rail.right+8:0;
     if(delta)picker.scrollBy({left:delta,behavior:reduced.matches?'instant':'smooth'});
   }
-  // Knitted fish sit after the catalogue: a friend's gift first, then your own.
-  const slotOrder=['guest','mine'];
+  // Knitted fish sit after the catalogue: friends' gifts in arrival order, then your own.
   function setCustom(slot,fish,{portrait=true}={}){
     let entry=entries.find(e=>e.slot===slot);
     if(!fish){if(entry){entry.button.remove();entries.splice(entries.indexOf(entry),1);}updateArrows();return;}
     if(!entry){
       entry={slot,fish};entry.button=makeButton(entry);entry.button.classList.add('custom-fish');
-      const after=entries.filter(e=>slotOrder.indexOf(e.slot)>=0&&slotOrder.indexOf(e.slot)<slotOrder.indexOf(slot)).pop()??entries.filter(e=>!e.slot).pop();
+      const mine=entries.find(e=>e.slot==='mine');
+      const after=slot!=='mine'&&mine?entries[entries.indexOf(mine)-1]:entries.at(-1);
       after.button.after(entry.button);entries.splice(entries.indexOf(after)+1,0,entry);
     }
     entry.fish=fish;
